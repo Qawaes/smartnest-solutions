@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.env.*
+instance/
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Flask
+instance/
+*.sqlite3
+*.db
+
+# Migrations cache
+migrations/versions/__pycache__/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node (if frontend is inside repo)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Secrets
+*.pem
+*.key
