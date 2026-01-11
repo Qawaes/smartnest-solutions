@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import BackToHome from "../../components/ui/BackToHome";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -56,6 +57,9 @@ export default function Login() {
             {error}
           </div>
         )}
+        <div >
+          <BackToHome />
+        </div>
 
         {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">

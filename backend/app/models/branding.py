@@ -1,4 +1,5 @@
 from app.extensions import db
+from datetime import datetime
 
 class BrandingDetail(db.Model):
     __tablename__ = "branding_detail"
@@ -20,3 +21,17 @@ class BrandingDetail(db.Model):
         "Order",
         back_populates="branding"
     )
+
+    def to_dict(self):
+            """Convert to dictionary"""
+            return {
+                'id': self.id,
+                'logo': self.logo,
+                'colors': self.colors,
+                'notes': self.notes,
+                'deadline': self.deadline.isoformat() if self.deadline else None,
+                'created_at': self.created_at.isoformat() if self.created_at else None
+            }
+        
+    def __repr__(self):
+            return f'<BrandingDetail {self.id} for Order {self.order_id}>'

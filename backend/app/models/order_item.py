@@ -25,3 +25,18 @@ class OrderItem(db.Model):
         "Order",
         back_populates="items"
     )
+
+ 
+    def to_dict(self):
+        """Convert to dictionary"""
+        return {
+            'id': self.id,
+            'product_id': self.product_id,
+            'name': self.name,
+            'price': float(self.price) if self.price is not None else 0.0,
+            'qty': self.qty,
+            'subtotal': float(self.subtotal) if self.price is not None else 0.0
+        }
+    
+    def __repr__(self):
+        return f'<OrderItem {self.id} - {self.name} x{self.qty}>'

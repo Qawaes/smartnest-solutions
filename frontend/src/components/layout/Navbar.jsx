@@ -17,9 +17,17 @@ export default function Navbar() {
       <div className="container flex items-center justify-between py-3 gap-4">
 
         {/* LOGO */}
-        <Link to="/" className="text-xl font-bold text-primary">
-          SmartNest
-        </Link>
+   <Link to="/" className="flex items-center gap-2">
+  <img
+    src="/smartnest-logo.jpg"
+    alt="SmartNest Logo"
+    className="h-8 w-auto"
+  />
+  <span className="text-xl font-bold text-primary">
+    SmartNest
+  </span>
+</Link>
+
 
         {/* SEARCH (GLOBAL) */}
         <div className="flex-1 max-w-xl hidden md:block">

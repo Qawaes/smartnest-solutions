@@ -5,24 +5,39 @@ class Order(db.Model):
     __tablename__ = "orders"
      
     id = db.Column(db.Integer, primary_key=True)
-    customer_name = db.Column(db.String(120))
-    phone = db.Column(db.String(20))
-    email = db.Column(db.String(120))
-    address = db.Column(db.String(255))
 
-    total = db.Column(db.Numeric(10, 2))
-    payment_method = db.Column(db.String(50))
-    status = db.Column(db.String(30), default="pending")
+    # Customer Information
+    customer_name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    address = db.Column(db.Text, nullable=False)
 
+    # Order Details
+    total = db.Column(db.Numeric(10, 2), nullable=False)
+    payment_method = db.Column(db.String(50), default="pending")
+    status = db.Column(db.String(30), default="pending", nullable=False)
+
+    payment_status = db.Column(db.String(30), default="unpaid", nullable=False)
+
+    # Payment Info
     mpesa_receipt = db.Column(db.String(50), nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
 
-    
-    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    # Relationships
     items = db.relationship(
         "OrderItem",
         back_populates="order",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="select"
     )
 
     branding = db.relationship(
@@ -32,3 +47,31 @@ class Order(db.Model):
         cascade="all, delete-orphan"
     )
 
+    # ---------- Methods ----------
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer": {
+                "name": self.customer_name,
+                "phone": self.phone,
+                "email": self.email,
+                "address": self.address,
+            },
+            "items": [item.to_dict() for item in self.items],
+            "total": float(self.total),
+            "payment_method": self.payment_method,
+            "payment_status": self.payment_status,
+            "mpesa_receipt": self.mpesa_receipt,
+            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
+            "status": self.status,
+            "created_at": self.created_at.isoformat(),
+        }
+
+    def mark_as_paid(self, mpesa_receipt=None):
+        self.payment_status = "paid"
+        self.paid_at = datetime.utcnow()
+        if mpesa_receipt:
+            self.mpesa_receipt = mpesa_receipt
+
+    def __repr__(self):
+        return f"<Order {self.id} - {self.customer_name}>"

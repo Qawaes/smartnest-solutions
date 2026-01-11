@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import BackToHome from "../../components/ui/BackToHome";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -46,6 +47,10 @@ export default function Register() {
       <h1 className="text-2xl font-semibold text-center">
         Create Account
       </h1>
+
+      <div >
+        <BackToHome />
+      </div>
 
       {error && (
         <div className="bg-red-100 text-red-700 text-sm p-3 rounded">
