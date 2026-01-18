@@ -14,14 +14,7 @@ class Order(db.Model):
 
     # Order Details
     total = db.Column(db.Numeric(10, 2), nullable=False)
-    payment_method = db.Column(db.String(50), default="pending")
     status = db.Column(db.String(30), default="pending", nullable=False)
-
-    payment_status = db.Column(db.String(30), default="unpaid", nullable=False)
-
-    # Payment Info
-    mpesa_receipt = db.Column(db.String(50), nullable=True)
-    paid_at = db.Column(db.DateTime, nullable=True)
 
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -38,6 +31,13 @@ class Order(db.Model):
         back_populates="order",
         cascade="all, delete-orphan",
         lazy="select"
+    )
+
+    payment = db.relationship(
+        "Payment",
+        back_populates="order",
+        uselist=False,
+        cascade="all, delete-orphan"
     )
 
     branding = db.relationship(
@@ -59,19 +59,10 @@ class Order(db.Model):
             },
             "items": [item.to_dict() for item in self.items],
             "total": float(self.total),
-            "payment_method": self.payment_method,
-            "payment_status": self.payment_status,
-            "mpesa_receipt": self.mpesa_receipt,
-            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
             "status": self.status,
+            "payment": self.payment.to_dict() if self.payment else None,
             "created_at": self.created_at.isoformat(),
         }
-
-    def mark_as_paid(self, mpesa_receipt=None):
-        self.payment_status = "paid"
-        self.paid_at = datetime.utcnow()
-        if mpesa_receipt:
-            self.mpesa_receipt = mpesa_receipt
 
     def __repr__(self):
         return f"<Order {self.id} - {self.customer_name}>"

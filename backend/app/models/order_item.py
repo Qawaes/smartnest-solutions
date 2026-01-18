@@ -35,7 +35,7 @@ class OrderItem(db.Model):
             'name': self.name,
             'price': float(self.price) if self.price is not None else 0.0,
             'qty': self.qty,
-            'subtotal': float(self.subtotal) if self.price is not None else 0.0
+            'subtotal': float(self.price * self.qty) if self.price is not None else 0.0
         }
     
     def __repr__(self):

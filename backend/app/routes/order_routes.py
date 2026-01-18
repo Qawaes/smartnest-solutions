@@ -33,13 +33,13 @@ def create_order():
         return jsonify({"error": "No items in order"}), 400
 
     try:
-        # 1️⃣ Create order shell (NO total yet)
+        # 1️⃣ Create order shell (with initial total = 0)
         order = Order(
             customer_name=customer["name"],
             phone=customer["phone"],
             email=customer.get("email"),
             address=customer["address"],
-            payment_method=data.get("payment_method", "pending"),
+            total=0,  # Initialize to 0 (will be updated after calculating items)
             status="pending",
         )
 
@@ -162,8 +162,8 @@ def get_orders():
                     if o.branding else None
                 ),
                 "total": float(o.total) if o.total is not None else 0.0,
-                "payment_method": o.payment_method,
                 "status": o.status,
+                "payment": o.payment.to_dict() if o.payment else None,
                 "created_at": o.created_at.strftime("%Y-%m-%d %H:%M") if o.created_at else None,
             }
             for o in orders
@@ -210,8 +210,8 @@ def get_order_detail(order_id):
             if order.branding else None
         ),
         "total": float(order.total) if order.total is not None else 0.0,
-        "payment_method": order.payment_method,
         "status": order.status,
+        "payment": order.payment.to_dict() if order.payment else None,
         "created_at": order.created_at.isoformat() if order.created_at else None,
     })
 
@@ -256,13 +256,16 @@ def update_order_status(order_id):
 
 @order_bp.route("/<int:order_id>/payment-method", methods=["PUT"])
 def update_payment_method(order_id):
+    """Update payment method by creating/updating a Payment record"""
+    from app.models.payment import Payment
+    
     data = request.get_json()
     
     if not data or "payment_method" not in data:
         return jsonify({"error": "Payment method is required"}), 400
 
     # Validate payment method
-    valid_methods = ["mpesa", "cash", "bank_transfer", "pending"]
+    valid_methods = ["mpesa", "cod", "bank_transfer"]
     payment_method = data["payment_method"]
     
     if payment_method not in valid_methods:
@@ -271,17 +274,28 @@ def update_payment_method(order_id):
         }), 400
 
     order = Order.query.get_or_404(order_id)
-    old_method = order.payment_method
-    order.payment_method = payment_method
-
+    
+    # Find or create payment record
+    payment = Payment.query.filter_by(
+        order_id=order_id,
+        method=payment_method
+    ).first()
+    
+    if not payment:
+        payment = Payment(
+            order_id=order_id,
+            method=payment_method,
+            status="PENDING"
+        )
+        db.session.add(payment)
+    
     try:
         db.session.commit()
         
         return jsonify({
             "message": "Payment method updated successfully",
             "order_id": order.id,
-            "old_payment_method": old_method,
-            "new_payment_method": order.payment_method
+            "payment": payment.to_dict()
         })
     
     except Exception as e:

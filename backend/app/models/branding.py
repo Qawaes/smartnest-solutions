@@ -30,7 +30,6 @@ class BrandingDetail(db.Model):
                 'colors': self.colors,
                 'notes': self.notes,
                 'deadline': self.deadline.isoformat() if self.deadline else None,
-                'created_at': self.created_at.isoformat() if self.created_at else None
             }
         
     def __repr__(self):

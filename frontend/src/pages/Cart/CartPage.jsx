@@ -25,9 +25,8 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-6">
-        <div className="text-center space-y-8 max-w-md animate-fadeIn">
-          {/* Empty Cart Illustration */}
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-6 py-20">
+        <div className="text-center space-y-8 max-w-md">
           <div className="relative">
             <div className="w-40 h-40 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center shadow-xl">
               <ShoppingBag className="w-20 h-20 text-purple-400" />
@@ -37,7 +36,6 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Text Content */}
           <div className="space-y-3">
             <h2 className="text-3xl md:text-4xl font-black text-gray-900">
               Your cart is empty
@@ -47,7 +45,6 @@ export default function CartPage() {
             </p>
           </div>
 
-          {/* CTA Buttons */}
           <div className="space-y-3">
             <Link
               to="/"
@@ -66,7 +63,6 @@ export default function CartPage() {
             </Link>
           </div>
 
-          {/* Features */}
           <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-200">
             <div className="text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
