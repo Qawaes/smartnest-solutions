@@ -4,7 +4,6 @@ from app.models.order import Order
 from app.models.payment import Payment
 from app.services.mpesa import stk_push, query_stk_status
 from datetime import datetime
-import json
 
 payment_bp = Blueprint("payments", __name__)
 
@@ -22,6 +21,11 @@ def initiate_stk():
     """
     data = request.get_json()
     
+    print("=" * 50)
+    print("STK PUSH REQUEST:")
+    print(f"Data: {data}")
+    print("=" * 50)
+    
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
@@ -36,77 +40,57 @@ def initiate_stk():
     if not order:
         return jsonify({"error": "Order not found"}), 404
     
-    # Check if order already has a paid payment
-    existing_payment = Payment.query.filter_by(
-        order_id=order_id,
-        status="PAID"
-    ).first()
-    if existing_payment:
-        return jsonify({"error": "Order already paid"}), 400
-    
-    # Get or create payment record for this order
-    payment = Payment.query.filter_by(
-        order_id=order_id,
-        method="mpesa"
-    ).first()
-    
+    # Get or create payment record
+    payment = order.payment
     if not payment:
         payment = Payment(
-            order_id=order_id,
+            order_id=order.id,
             method="mpesa",
             status="PENDING"
         )
         db.session.add(payment)
         db.session.flush()
     
+    # Check if already paid
+    if payment.status == "PAID":
+        return jsonify({"error": "Order already paid"}), 400
+    
     # Initiate STK Push
     try:
+        print(f"Initiating STK for Order {order_id}, Amount: {order.total}")
         result = stk_push(
             phone=phone,
             amount=order.total,
             order_id=order.id
         )
         
-        # HARD LOGGING - PRINT EXACT SAFARICOM RESPONSE
-        print(f"\n🔥 STK PUSH RESULT (RAW): {result}")
-        print(f"\n{'='*60}")
-        print(f"STK Push Response for Order {order_id}:")
-        print(f"Success: {result.get('success')}")
-        print(f"Response Code: {result.get('response_code')}")
-        print(f"CheckoutRequestID: {result.get('checkout_request_id')}")
-        print(f"Full Response: {result}")
-        print(f"{'='*60}\n")
+        print(f"STK Result: {result}")
         
         if result.get("success"):
-            # Store checkout request ID in payment record
-            checkout_id = result.get("checkout_request_id")
-            print(f"🔥 SAVING checkout_id: {checkout_id} to Payment {payment.id}")
-            payment.mpesa_checkout_id = checkout_id
+            # Store checkout request ID
+            payment.mpesa_checkout_id = result["checkout_request_id"]
             payment.status = "PENDING"
-            db.session.flush()
             db.session.commit()
-            db.session.refresh(payment)
-            print(f"🔥 VERIFY SAVED: Payment {payment.id} now has checkout_id: {payment.mpesa_checkout_id}")
+            
+            print(f"Payment updated with checkout_id: {payment.mpesa_checkout_id}")
             
             return jsonify({
                 "success": True,
-                "message": "STK push sent successfully. Check your phone for the prompt.",
-                "checkout_request_id": result.get("checkout_request_id"),
-                "customer_message": result.get("customer_message"),
-                "response_code": result.get("response_code"),
-                "payment_id": payment.id
+                "message": "STK push sent successfully",
+                "checkout_request_id": result["checkout_request_id"],
+                "customer_message": result.get("customer_message")
             }), 200
         else:
-            error_msg = result.get("error") or result.get("response_description") or "Failed to initiate payment"
             return jsonify({
                 "success": False,
-                "error": error_msg,
-                "response_code": result.get("response_code")
+                "error": result.get("error", "Failed to initiate payment")
             }), 400
     
     except Exception as e:
-        print(f"STK Push Exception: {str(e)}")
         db.session.rollback()
+        print(f"STK Push Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             "success": False,
             "error": f"Server error: {str(e)}"
@@ -119,26 +103,20 @@ def mpesa_callback():
     M-Pesa callback endpoint
     Safaricom will POST payment results here
     """
-    # 🔥 HARD LOGGING - PROOF CALLBACK IS HIT
-    print("\n" + "="*80)
-    print("🔥🔥🔥 MPESA CALLBACK HIT 🔥🔥🔥")
-    print("="*80)
-    
     try:
         data = request.get_json()
         
-        # Log the callback for debugging
+        # Log the callback
+        print("=" * 50)
         print("M-PESA CALLBACK RECEIVED:")
-        print(json.dumps(data, indent=2))
-        print("="*80)
+        print(data)
+        print("=" * 50)
         
         # Extract STK callback data
         stk_callback = data.get("Body", {}).get("stkCallback", {})
         result_code = stk_callback.get("ResultCode")
         result_desc = stk_callback.get("ResultDesc")
         checkout_request_id = stk_callback.get("CheckoutRequestID")
-        
-        print(f"ResultCode: {result_code}, CheckoutRequestID: {checkout_request_id}")
         
         # Find payment by checkout request ID
         payment = Payment.query.filter_by(
@@ -147,40 +125,35 @@ def mpesa_callback():
         
         if not payment:
             print(f"Payment not found for CheckoutRequestID: {checkout_request_id}")
-            # Still return success to M-Pesa
             return jsonify({
                 "ResultCode": 0,
                 "ResultDesc": "Accepted"
             }), 200
         
-        print(f"Found payment: {payment.id}, Order: {payment.order_id}, Current status: {payment.status}")
-        
         # Payment successful
         if result_code == 0:
-            # Extract payment details from metadata
+            # Extract payment details
             callback_metadata = stk_callback.get("CallbackMetadata", {})
             items = callback_metadata.get("Item", [])
             
-            # Parse metadata items
             payment_details = {}
             for item in items:
-                name = item.get("Name")
-                value = item.get("Value")
-                payment_details[name] = value
+                payment_details[item.get("Name")] = item.get("Value")
             
-            # Update payment with success details
+            # Update payment
             payment.mark_as_paid(mpesa_receipt=payment_details.get("MpesaReceiptNumber"))
-            # Update order status to processing
-            payment.order.status = "processing"
-            db.session.commit()
             
-            print(f"✓ Payment {payment.id} marked as PAID. Receipt: {payment.mpesa_receipt}, Order status: {payment.order.status}")
+            # Update order status
+            payment.order.status = "processing"
+            
+            print(f"Payment {payment.id} marked as PAID. Receipt: {payment.mpesa_receipt}")
         
         # Payment failed or cancelled
         else:
             payment.mark_as_failed()
-            db.session.commit()
-            print(f"✗ Payment {payment.id} FAILED. Reason: {result_desc}")
+            print(f"Payment {payment.id} FAILED. Reason: {result_desc}")
+        
+        db.session.commit()
         
         # IMPORTANT: Always return success to M-Pesa
         return jsonify({
@@ -189,7 +162,7 @@ def mpesa_callback():
         }), 200
     
     except Exception as e:
-        print(f"Error processing M-Pesa callback: {str(e)}")
+        print(f"Callback Error: {str(e)}")
         import traceback
         traceback.print_exc()
         # Still return success to avoid retries
@@ -203,26 +176,21 @@ def mpesa_callback():
 def check_payment_status(checkout_request_id):
     """
     Check the status of an M-Pesa transaction
-    Useful for polling if callback hasn't arrived
     """
     try:
-        # Find payment by checkout request ID
+        # Query M-Pesa API
+        result = query_stk_status(checkout_request_id)
+        
+        # Also check local database
         payment = Payment.query.filter_by(
             mpesa_checkout_id=checkout_request_id
         ).first()
         
-        if not payment:
-            return jsonify({"error": "Payment not found"}), 404
-        
         return jsonify({
-            "payment_id": payment.id,
-            "order_id": payment.order_id,
-            "method": payment.method,
-            "status": payment.status,
-            "mpesa_receipt": payment.mpesa_receipt,
-            "mpesa_checkout_id": payment.mpesa_checkout_id,
-            "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
-            "order_status": payment.order.status
+            "mpesa_status": result,
+            "payment": payment.to_dict() if payment else None,
+            "order_status": payment.order.status if payment else None,
+            "paid": payment.status == "PAID" if payment else False
         })
     
     except Exception as e:
@@ -235,35 +203,22 @@ def check_payment_status(checkout_request_id):
 def get_order_payment_status(order_id):
     """
     Get payment status for a specific order
-    Useful for frontend polling
+    Used by frontend for polling
     """
-    # Get the order
     order = Order.query.get(order_id)
+    
     if not order:
         return jsonify({"error": "Order not found"}), 404
     
-    # Get the M-Pesa payment for this order (most recent)
-    payment = Payment.query.filter_by(
-        order_id=order_id,
-        method="mpesa"
-    ).order_by(Payment.created_at.desc()).first()
+    payment = order.payment
     
-    if not payment:
-        return jsonify({"error": "No payment found for this order"}), 404
-    
-    print(f"\n[Status Check] Order {order_id} - Payment {payment.id} - Status: {payment.status}")
-    
-    response = {
+    return jsonify({
         "order_id": order.id,
-        "order_status": order.status,
-        "payment_id": payment.id,
-        "payment_method": payment.method,
-        "payment_status": payment.status,
-        "mpesa_receipt": payment.mpesa_receipt,
-        "mpesa_checkout_id": payment.mpesa_checkout_id,
-        "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
+        "status": order.status,
+        "payment_status": payment.status if payment else "NONE",
+        "payment_method": payment.method if payment else None,
+        "mpesa_receipt": payment.mpesa_receipt if payment else None,
+        "mpesa_checkout_id": payment.mpesa_checkout_id if payment else None,
+        "paid_at": payment.paid_at.isoformat() if payment and payment.paid_at else None,
         "total": float(order.total)
-    }
-    
-    print(f"[Status Check] Final response for order {order_id}: {response}\n")
-    return jsonify(response)
+    })

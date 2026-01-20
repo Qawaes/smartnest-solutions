@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "http://localhost:5000/api";
 
 export async function fetchProducts() {
   const res = await fetch(`${API_BASE}/products`);
@@ -51,3 +51,21 @@ export async function updateOrderStatus(orderId, status) {
   if (!res.ok) throw new Error("Failed to update order status");
   return res.json();
 }
+
+
+export const initiateMpesaPayment = async (orderId, phone) => {
+  const response = await fetch('http://127.0.0.1:5000/api/payments/mpesa/stk', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      order_id: orderId,
+      phone: phone,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error('Payment initiation failed');
+  }
+  
+  return response.json();
+};

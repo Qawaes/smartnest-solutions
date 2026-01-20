@@ -34,11 +34,14 @@ export default function Product() {
   const inCart = Boolean(cartItem);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:5000/api/products`)
+    fetch(`http://localhost:5000/api/products`)
       .then((res) => res.json())
       .then((data) => {
-        const found = data.find((p) => String(p.id) === id);
+        console.log("PRODUCT API RESPONSE:", data);
+        const found = data.products.find((p) => String(p.id) === id);
         setProduct(found);
+         setLoading(false);
+
 
         if (found?.images?.length) {
           const primary = found.images.find((img) => img.is_primary) || found.images[0];

@@ -7,7 +7,7 @@ from app.extensions import db
 product_bp = Blueprint("products", __name__)
 
 # GET (ALL or BY CATEGORY)
-@product_bp.route("", methods=["GET"])
+@product_bp.route("", methods=["GET", "OPTIONS"])
 def get_products():
     products = Product.query.all()
 

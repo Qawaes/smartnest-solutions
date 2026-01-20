@@ -9,6 +9,7 @@ import Dashboard from '../pages/admin/Dashboard';
 import ProductsPage from '../pages/admin/Products/ProductsPage';
 import OrdersPage from '../pages/admin/Orders/OrdersPage';
 import BrandingRequestsPage from '../pages/admin/Branding/BrandingRequestsPage';
+import AdminPayments from '../pages/admin/Payments/AdminPayments';
 
 import Home from "../pages/Home/Home";
 import Category from "../pages/Category/Category";
@@ -53,6 +54,9 @@ export default function AppRoutes() {
           <Route path="/admin/products" element={<ProductsPage />} />
           <Route path="/admin/orders" element={<OrdersPage />} />
           <Route path="/admin/branding" element={<BrandingRequestsPage />} />
+          <Route path="/admin/payments" element={<AdminPayments />} />
+
+
         </Route>
       </Route>
      

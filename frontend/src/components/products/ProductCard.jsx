@@ -35,7 +35,7 @@ export default function ProductCard({ product }) {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Container */}
-      <Link to={`/product/${product.id}`} className="block relative">
+      <div className="block relative">
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
           {product.image ? (
             <>
@@ -79,15 +79,21 @@ export default function ProductCard({ product }) {
                 e.stopPropagation();
               }}
               className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-50 transition-colors group/heart"
+              aria-label="Add to wishlist"
             >
               <Heart className="w-5 h-5 text-gray-700 group-hover/heart:text-red-500 transition-colors" />
             </button>
-            <Link
-              to={`/product/${product.id}`}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = `/product/${product.id}`;
+              }}
               className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-purple-50 transition-colors group/eye"
+              aria-label="Quick view product"
             >
               <Eye className="w-5 h-5 text-gray-700 group-hover/eye:text-purple-600 transition-colors" />
-            </Link>
+            </button>
           </div>
 
           {/* Badge for custom branding */}
@@ -105,16 +111,20 @@ export default function ProductCard({ product }) {
               isHovered ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
             }`}
           >
-            <Link
-              to={`/product/${product.id}`}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = `/product/${product.id}`;
+              }}
               className="w-full py-3 bg-white text-gray-900 font-semibold rounded-xl shadow-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm"
             >
               <Eye className="w-4 h-4" />
               Quick View
-            </Link>
+            </button>
           </div>
         </div>
-      </Link>
+      </div>
 
       {/* Product Info */}
       <div className="p-4">

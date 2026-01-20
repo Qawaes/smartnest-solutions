@@ -1,8 +1,9 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
   ShoppingCart,
+  DollarSign,
   Palette,
   LogOut,
   Menu,
@@ -15,6 +16,7 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     if (!confirm('Are you sure you want to logout?')) return;
@@ -27,6 +29,7 @@ export default function AdminLayout() {
     { path: '/admin/products', label: 'Products', icon: Package },
     { path: '/admin/orders', label: 'Orders', icon: ShoppingCart },
     { path: '/admin/branding', label: 'Branding Requests', icon: Palette },
+    { path: '/admin/payments', label: 'Payments', icon: DollarSign },
   ];
 
   return (
@@ -35,7 +38,7 @@ export default function AdminLayout() {
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } bg-gray-900 text-white transition-all duration-300 overflow-hidden`}
+        } bg-gray-900 text-white transition-all duration-300 flex flex-col`}
       >
         <div className="p-4 flex items-center justify-between">
           {sidebarOpen && (
@@ -52,15 +55,28 @@ export default function AdminLayout() {
           </button>
         </div>
 
-        <nav className="mt-8 space-y-1 px-2 flex flex-col h-full">
-          <div>
+        {/* Navigation Items */}
+        <nav className="mt-8 px-2 flex-1">
+          <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive =
+                item.path === '/admin'
+                  ? location.pathname === '/admin'
+                  : location.pathname === item.path ||
+                    location.pathname.startsWith(item.path + '/');
+
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="flex items-center gap-4 px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition"
+                  className={`flex items-center gap-4 px-4 py-3 rounded-lg transition
+                    ${
+                      isActive
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    }`}
+                  title={!sidebarOpen ? item.label : undefined}
                 >
                   <Icon size={20} />
                   {sidebarOpen && <span>{item.label}</span>}
@@ -68,16 +84,19 @@ export default function AdminLayout() {
               );
             })}
           </div>
+        </nav>
 
+      
+        <div className="p-2 pb-4">
           <button
             onClick={handleLogout}
-            className="mt-auto flex items-center gap-4 px-4 py-3 text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition w-full"
-            title="Logout"
+            className="flex items-center gap-4 px-4 py-3 text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition w-full"
+            title={!sidebarOpen ? 'Logout' : undefined}
           >
             <LogOut size={20} />
             {sidebarOpen && <span>Logout</span>}
           </button>
-        </nav>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -88,11 +107,9 @@ export default function AdminLayout() {
             Admin Panel
           </h2>
 
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 hidden sm:block">
-              Welcome  SmartNest Admin
-            </span>
-          </div>
+          <span className="text-sm text-gray-600 hidden sm:block">
+            Welcome SmartNest Admin
+          </span>
         </header>
 
         {/* Page Content */}

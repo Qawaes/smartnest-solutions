@@ -33,15 +33,15 @@ class Order(db.Model):
         lazy="select"
     )
 
-    payment = db.relationship(
-        "Payment",
+    branding = db.relationship(
+        "BrandingDetail",
         back_populates="order",
         uselist=False,
         cascade="all, delete-orphan"
     )
 
-    branding = db.relationship(
-        "BrandingDetail",
+    payment = db.relationship(
+        "Payment",
         back_populates="order",
         uselist=False,
         cascade="all, delete-orphan"

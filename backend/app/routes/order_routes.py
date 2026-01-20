@@ -4,6 +4,7 @@ from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.branding import BrandingDetail
 from app.models.product import Product
+from app.models.payment import Payment
 from datetime import datetime
 
 order_bp = Blueprint("orders", __name__)
@@ -33,23 +34,23 @@ def create_order():
         return jsonify({"error": "No items in order"}), 400
 
     try:
-        # 1️⃣ Create order shell (with initial total = 0)
+        # 1️⃣ Create order
         order = Order(
             customer_name=customer["name"],
             phone=customer["phone"],
             email=customer.get("email"),
             address=customer["address"],
-            total=0,  # Initialize to 0 (will be updated after calculating items)
+            total=0,
             status="pending",
         )
 
         db.session.add(order)
-        db.session.flush()  # get order.id
+        db.session.flush()  # Get order.id
 
         calculated_total = 0
         created_items = []
 
-        # 2️⃣ Order items (SNAPSHOT product data)
+        # 2️⃣ Create order items
         for item in items:
             product_id = item.get("product_id")
             qty = item.get("qty", 0)
@@ -84,10 +85,19 @@ def create_order():
                 "qty": qty
             })
 
-        # 3️⃣ Save final calculated total (SECURE)
+        # 3️⃣ Update total
         order.total = calculated_total
 
-        # 4️⃣ Branding (optional)
+        # 4️⃣ Create payment record
+        payment_method = data.get("payment_method", "mpesa")
+        payment = Payment(
+            order_id=order.id,
+            method=payment_method,
+            status="PENDING"
+        )
+        db.session.add(payment)
+
+        # 5️⃣ Branding (optional)
         branding = data.get("branding")
         if branding:
             branding_detail = BrandingDetail(
@@ -106,6 +116,7 @@ def create_order():
             "order_id": order.id,
             "total": float(order.total),
             "status": order.status,
+            "payment_status": payment.status,
             "items": created_items,
             "customer": {
                 "name": order.customer_name,
@@ -116,6 +127,9 @@ def create_order():
 
     except Exception as e:
         db.session.rollback()
+        print(f"Error creating order: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             "error": "Failed to create order",
             "details": str(e)
@@ -125,7 +139,6 @@ def create_order():
 @order_bp.route("", methods=["GET"])
 def get_orders():
     try:
-        # Optional filtering by status
         status = request.args.get("status")
         
         query = Order.query
@@ -162,8 +175,8 @@ def get_orders():
                     if o.branding else None
                 ),
                 "total": float(o.total) if o.total is not None else 0.0,
-                "status": o.status,
                 "payment": o.payment.to_dict() if o.payment else None,
+                "status": o.status,
                 "created_at": o.created_at.strftime("%Y-%m-%d %H:%M") if o.created_at else None,
             }
             for o in orders
@@ -210,8 +223,8 @@ def get_order_detail(order_id):
             if order.branding else None
         ),
         "total": float(order.total) if order.total is not None else 0.0,
-        "status": order.status,
         "payment": order.payment.to_dict() if order.payment else None,
+        "status": order.status,
         "created_at": order.created_at.isoformat() if order.created_at else None,
     })
 
@@ -254,61 +267,9 @@ def update_order_status(order_id):
         }), 500
 
 
-@order_bp.route("/<int:order_id>/payment-method", methods=["PUT"])
-def update_payment_method(order_id):
-    """Update payment method by creating/updating a Payment record"""
-    from app.models.payment import Payment
-    
-    data = request.get_json()
-    
-    if not data or "payment_method" not in data:
-        return jsonify({"error": "Payment method is required"}), 400
-
-    # Validate payment method
-    valid_methods = ["mpesa", "cod", "bank_transfer"]
-    payment_method = data["payment_method"]
-    
-    if payment_method not in valid_methods:
-        return jsonify({
-            "error": f"Invalid payment method. Must be one of: {', '.join(valid_methods)}"
-        }), 400
-
-    order = Order.query.get_or_404(order_id)
-    
-    # Find or create payment record
-    payment = Payment.query.filter_by(
-        order_id=order_id,
-        method=payment_method
-    ).first()
-    
-    if not payment:
-        payment = Payment(
-            order_id=order_id,
-            method=payment_method,
-            status="PENDING"
-        )
-        db.session.add(payment)
-    
-    try:
-        db.session.commit()
-        
-        return jsonify({
-            "message": "Payment method updated successfully",
-            "order_id": order.id,
-            "payment": payment.to_dict()
-        })
-    
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            "error": "Failed to update payment method",
-            "details": str(e)
-        }), 500
-
-
 @order_bp.route("/<int:order_id>", methods=["DELETE"])
 def cancel_order(order_id):
-    """Cancel/delete an order (only if pending)"""
+    """Cancel an order (only if pending)"""
     order = Order.query.get_or_404(order_id)
     
     # Only allow cancellation of pending orders
@@ -319,6 +280,8 @@ def cancel_order(order_id):
     
     try:
         order.status = "cancelled"
+        if order.payment:
+            order.payment.status = "CANCELLED"
         db.session.commit()
         
         return jsonify({

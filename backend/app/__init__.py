@@ -35,6 +35,9 @@ def create_app():
     from .routes.payment import payment_bp
     from .routes.admin_routes import admin_bp
     from .routes.admin_auth_routes import admin_auth_bp
+    
+    from .routes.admin_payment import admin_payment_bp
+    
     from .utils.cloudinary import init_cloudinary
 
     app.register_blueprint(product_bp, url_prefix="/api/products")
@@ -44,7 +47,9 @@ def create_app():
     app.register_blueprint(payment_bp, url_prefix="/api/payments")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_auth_bp, url_prefix="/api/admin/auth")
-
+    app.register_blueprint(admin_payment_bp, url_prefix="/api/admin/payments")
+    
+   
     # Initialize cloudinary and other app-level helpers
     init_cloudinary(app)
 
