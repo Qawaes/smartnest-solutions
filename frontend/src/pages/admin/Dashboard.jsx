@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Package, AlertCircle, DollarSign } from 'lucide-react';
+import { API_URL } from '../../utils/apiHelper';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -18,8 +19,8 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const [ordersRes, productsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/orders'),
-        fetch('http://localhost:5000/api/products')
+      fetch(`${API_URL}/api/orders`),
+      fetch(`${API_URL}/api/products`)
       ]);
 
       const orders = await ordersRes.json();

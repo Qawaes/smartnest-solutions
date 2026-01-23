@@ -28,26 +28,55 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [imageLoading, setImageLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [error, setError] = useState(null);
 
   // Find if product is in cart
   const cartItem = cart.find((item) => item.product_id === product?.id);
   const inCart = Boolean(cartItem);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/products`)
-      .then((res) => res.json())
+    setLoading(true);
+    setError(null);
+    
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    
+    fetch(`${API_URL}/api/products`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log("PRODUCT API RESPONSE:", data);
-        const found = data.products.find((p) => String(p.id) === id);
+        
+        // FIXED: Handle both response formats
+        const products = Array.isArray(data) ? data : data.products;
+        
+        if (!products || !Array.isArray(products)) {
+          throw new Error("Invalid API response format");
+        }
+        
+        const found = products.find((p) => String(p.id) === String(id));
+        
+        console.log("Looking for product ID:", id);
+        console.log("Found product:", found);
+        
         setProduct(found);
-         setLoading(false);
-
 
         if (found?.images?.length) {
           const primary = found.images.find((img) => img.is_primary) || found.images[0];
           setActiveImage(primary.image_url);
+        } else if (found?.image) {
+          // Fallback to single image field if images array doesn't exist
+          setActiveImage(found.image);
         }
 
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching product:", err);
+        setError(err.message);
         setLoading(false);
       });
   }, [id]);
@@ -94,6 +123,26 @@ export default function Product() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600 font-medium">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="text-center">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Package className="w-12 h-12 text-red-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Product</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-3 bg-black text-white rounded-full font-semibold hover:bg-gray-800 transition-colors"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );

@@ -5,6 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     middlewareMode: false,
+    host: true,
+    allowedHosts: ['.iano.tech'],
     hmr: {
       protocol: 'ws',
       host: 'localhost',

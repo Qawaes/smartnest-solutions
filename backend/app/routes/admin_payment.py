@@ -2,31 +2,8 @@ from flask import Blueprint, jsonify, request
 from app.extensions import db
 from app.models.payment import Payment
 from app.models.order import Order
-from functools import wraps
-import jwt
-import os
 
 admin_payment_bp = Blueprint("admin_payments", __name__)
-
-# Simple admin auth decorator (adjust based on your auth system)
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = None
-        auth_header = request.headers.get('Authorization')
-        
-        if auth_header:
-            try:
-                token = auth_header.split(" ")[1]
-                # Verify token (adjust secret key as needed)
-                jwt.decode(token, os.getenv('JWT_SECRET_KEY', 'your-secret-key'), algorithms=["HS256"])
-            except:
-                return jsonify({"error": "Invalid or expired token"}), 401
-        else:
-            return jsonify({"error": "Authorization token required"}), 401
-        
-        return f(*args, **kwargs)
-    return decorated_function
 
 
 @admin_payment_bp.route("/test", methods=["GET"])
@@ -36,7 +13,6 @@ def test_route():
 
 
 @admin_payment_bp.route("", methods=["GET", "OPTIONS"])
-@admin_required
 def get_all_payments():
     """
     Get all payments with order and customer details
@@ -54,18 +30,18 @@ def get_all_payments():
         for payment in payments:
             order = payment.order
             
-            # Get customer info
-            customer_name = order.customer.name if order.customer else "Guest"
-            customer_contact = order.customer.email or order.customer.phone if order.customer else "N/A"
-            contact_type = "email" if (order.customer and order.customer.email) else "phone"
+            # Get customer info directly from order columns
+            customer_name = order.customer_name or "Guest"
+            customer_contact = order.email or order.phone or "N/A"
+            contact_type = "email" if order.email else "phone"
             
             # Get order items/products
             products = []
             for item in order.items:
                 products.append({
-                    "name": item.product.name if item.product else "Unknown",
-                    "quantity": item.quantity,
-                    "price": float(item.price)
+                    "name": item.name or "Unknown",
+                    "quantity": item.qty,
+                    "price": float(item.price) if item.price else 0.0
                 })
             
             result.append({
@@ -95,7 +71,6 @@ def get_all_payments():
 
 
 @admin_payment_bp.route("/stats", methods=["GET", "OPTIONS"])
-@admin_required
 def get_payment_stats():
     """
     Get payment statistics for dashboard

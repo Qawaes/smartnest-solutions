@@ -2,45 +2,117 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
+const API_URL = "http://admin.iano.tech:5000/api/admin/auth";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // load user on refresh
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    verifyToken();
   }, []);
 
-  const login = (email, password) => {
-    // 🔐 DEV ADMIN LOGIN
-    if (email === "admin@smartnest.co.ke" && password === "admin123") {
-      const adminUser = { email, role: "admin" };
-      setUser(adminUser);
-      localStorage.setItem("user", JSON.stringify(adminUser));
-      return adminUser;
+  const verifyToken = async () => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    // normal customer
-    const customer = { email, role: "customer" };
-    setUser(customer);
-    localStorage.setItem("user", JSON.stringify(customer));
-    return customer;
+    try {
+      const response = await fetch(`${API_URL}/verify`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.admin);
+      } else {
+        localStorage.removeItem("admin_token");
+      }
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      localStorage.removeItem("admin_token");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
+  const requestOTP = async (email) => {
+    const response = await fetch(`${API_URL}/request-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to send OTP");
+    }
+
+    return data;
+  };
+
+  const verifyOTP = async (email, otp) => {
+    const response = await fetch(`${API_URL}/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "OTP verification failed");
+    }
+
+    localStorage.setItem("admin_token", data.access_token);
+    setUser(data.admin);
+    return data;
+  };
+
+  const logout = async () => {
+    const token = localStorage.getItem("admin_token");
+    
+    if (token) {
+      try {
+        await fetch(`${API_URL}/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Logout request failed:", error);
+      }
+    }
+    
+    localStorage.removeItem("admin_token");
     setUser(null);
-    localStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        requestOTP,
+        verifyOTP,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
 }

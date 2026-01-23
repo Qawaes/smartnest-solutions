@@ -4,6 +4,7 @@ from app.models.order import Order
 from app.models.payment import Payment
 from app.services.mpesa import stk_push, query_stk_status
 from datetime import datetime
+import traceback
 
 payment_bp = Blueprint("payments", __name__)
 
@@ -89,7 +90,6 @@ def initiate_stk():
     except Exception as e:
         db.session.rollback()
         print(f"STK Push Error: {str(e)}")
-        import traceback
         traceback.print_exc()
         return jsonify({
             "success": False,
@@ -97,26 +97,53 @@ def initiate_stk():
         }), 500
 
 
-@payment_bp.route("/mpesa/callback", methods=["POST"])
+@payment_bp.route("/mpesa/callback", methods=["POST", "OPTIONS"])
 def mpesa_callback():
     """
     M-Pesa callback endpoint
     Safaricom will POST payment results here
+    
+    CRITICAL: This endpoint must ALWAYS return 200 OK to prevent M-Pesa retries
     """
+    
+    # Handle CORS preflight
+    if request.method == "OPTIONS":
+        return jsonify({"ResultCode": 0, "ResultDesc": "Success"}), 200
+    
+    # Use a separate try-catch to ensure we ALWAYS return 200
     try:
+        # Get callback data
         data = request.get_json()
         
         # Log the callback
-        print("=" * 50)
+        print("=" * 80)
         print("M-PESA CALLBACK RECEIVED:")
-        print(data)
-        print("=" * 50)
+        print(f"Timestamp: {datetime.now().isoformat()}")
+        print(f"Data: {data}")
+        print("=" * 80)
+        
+        # Validate data structure
+        if not data or "Body" not in data:
+            print("ERROR: Invalid callback structure - missing Body")
+            return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
         
         # Extract STK callback data
         stk_callback = data.get("Body", {}).get("stkCallback", {})
+        
+        if not stk_callback:
+            print("ERROR: Invalid callback structure - missing stkCallback")
+            return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
+        
+        # Extract key fields
         result_code = stk_callback.get("ResultCode")
         result_desc = stk_callback.get("ResultDesc")
         checkout_request_id = stk_callback.get("CheckoutRequestID")
+        merchant_request_id = stk_callback.get("MerchantRequestID")
+        
+        print(f"CheckoutRequestID: {checkout_request_id}")
+        print(f"MerchantRequestID: {merchant_request_id}")
+        print(f"ResultCode: {result_code}")
+        print(f"ResultDesc: {result_desc}")
         
         # Find payment by checkout request ID
         payment = Payment.query.filter_by(
@@ -124,48 +151,93 @@ def mpesa_callback():
         ).first()
         
         if not payment:
-            print(f"Payment not found for CheckoutRequestID: {checkout_request_id}")
-            return jsonify({
-                "ResultCode": 0,
-                "ResultDesc": "Accepted"
-            }), 200
+            print(f"WARNING: Payment not found for CheckoutRequestID: {checkout_request_id}")
+            # Still return 200 - this is not an error from M-Pesa's perspective
+            return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
         
-        # Payment successful
+        print(f"Found payment ID: {payment.id} for Order ID: {payment.order_id}")
+        print(f"Current payment status: {payment.status}")
+        
+        # Process based on result code
         if result_code == 0:
-            # Extract payment details
+            # Payment SUCCESSFUL
+            print("✓ Payment SUCCESSFUL - Processing...")
+            
+            # Extract callback metadata
             callback_metadata = stk_callback.get("CallbackMetadata", {})
             items = callback_metadata.get("Item", [])
             
+            # Extract payment details
             payment_details = {}
             for item in items:
-                payment_details[item.get("Name")] = item.get("Value")
+                name = item.get("Name")
+                value = item.get("Value")
+                if name and value is not None:
+                    payment_details[name] = value
             
-            # Update payment
-            payment.mark_as_paid(mpesa_receipt=payment_details.get("MpesaReceiptNumber"))
+            print(f"Payment Details: {payment_details}")
+            
+            # Get M-Pesa receipt number
+            mpesa_receipt = payment_details.get("MpesaReceiptNumber")
+            amount = payment_details.get("Amount")
+            phone = payment_details.get("PhoneNumber")
+            
+            print(f"Receipt: {mpesa_receipt}, Amount: {amount}, Phone: {phone}")
+            
+            # Update payment status
+            payment.mark_as_paid(mpesa_receipt=mpesa_receipt)
             
             # Update order status
-            payment.order.status = "processing"
+            if payment.order:
+                payment.order.status = "CONFIRMED"
+                print(f"Order {payment.order.id} status updated to CONFIRMED")
             
-            print(f"Payment {payment.id} marked as PAID. Receipt: {payment.mpesa_receipt}")
+            # Commit to database
+            db.session.commit()
+            
+            print(f"✓ Payment {payment.id} successfully marked as PAID")
+            print("=" * 80)
         
-        # Payment failed or cancelled
         else:
+            # Payment FAILED or CANCELLED
+            print(f"✗ Payment FAILED - ResultCode: {result_code}")
+            print(f"Reason: {result_desc}")
+            
+            # Mark payment as failed
             payment.mark_as_failed()
-            print(f"Payment {payment.id} FAILED. Reason: {result_desc}")
+            
+            # Update order status
+            if payment.order:
+                payment.order.status = "PAYMENT_FAILED"
+                print(f"Order {payment.order.id} status updated to PAYMENT_FAILED")
+            
+            # Commit to database
+            db.session.commit()
+            
+            print(f"✓ Payment {payment.id} marked as FAILED")
+            print("=" * 80)
         
-        db.session.commit()
-        
-        # IMPORTANT: Always return success to M-Pesa
+        # CRITICAL: Always return 200 OK to M-Pesa
         return jsonify({
             "ResultCode": 0,
-            "ResultDesc": "Accepted"
+            "ResultDesc": "Success"
         }), 200
     
     except Exception as e:
-        print(f"Callback Error: {str(e)}")
-        import traceback
+        # Log the error but still return 200
+        print("!" * 80)
+        print(f"EXCEPTION in M-Pesa callback: {str(e)}")
+        print("Full traceback:")
         traceback.print_exc()
-        # Still return success to avoid retries
+        print("!" * 80)
+        
+        # Try to rollback any pending transaction
+        try:
+            db.session.rollback()
+        except:
+            pass
+        
+        # CRITICAL: Still return 200 to prevent M-Pesa from retrying
         return jsonify({
             "ResultCode": 0,
             "ResultDesc": "Accepted"
@@ -194,6 +266,8 @@ def check_payment_status(checkout_request_id):
         })
     
     except Exception as e:
+        print(f"Status check error: {str(e)}")
+        traceback.print_exc()
         return jsonify({
             "error": str(e)
         }), 500
@@ -205,20 +279,70 @@ def get_order_payment_status(order_id):
     Get payment status for a specific order
     Used by frontend for polling
     """
-    order = Order.query.get(order_id)
+    try:
+        order = Order.query.get(order_id)
+        
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+        
+        payment = order.payment
+        
+        return jsonify({
+            "order_id": order.id,
+            "status": order.status,
+            "payment_status": payment.status if payment else "NONE",
+            "payment_method": payment.method if payment else None,
+            "mpesa_receipt": payment.mpesa_receipt if payment else None,
+            "mpesa_checkout_id": payment.mpesa_checkout_id if payment else None,
+            "paid_at": payment.paid_at.isoformat() if payment and payment.paid_at else None,
+            "total": float(order.total)
+        })
     
-    if not order:
-        return jsonify({"error": "Order not found"}), 404
+    except Exception as e:
+        print(f"Payment status error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@payment_bp.route("/mpesa/test-callback", methods=["POST"])
+def test_callback():
+    """
+    Test endpoint to manually trigger callback processing
+    Useful for testing without actual M-Pesa transactions
+    """
+    try:
+        # Get test data or use sample
+        data = request.get_json() or {
+            "Body": {
+                "stkCallback": {
+                    "MerchantRequestID": "test-merchant-123",
+                    "CheckoutRequestID": "ws_CO_TEST123456789",
+                    "ResultCode": 0,
+                    "ResultDesc": "The service request is processed successfully.",
+                    "CallbackMetadata": {
+                        "Item": [
+                            {"Name": "Amount", "Value": 1},
+                            {"Name": "MpesaReceiptNumber", "Value": "TEST123ABC"},
+                            {"Name": "TransactionDate", "Value": 20260121093405},
+                            {"Name": "PhoneNumber", "Value": 254712345678}
+                        ]
+                    }
+                }
+            }
+        }
+        
+        print("Test callback with data:", data)
+        
+        # Process through the actual callback
+        # Create a new request context with the test data
+        with payment_bp.app.test_request_context(
+            '/mpesa/callback',
+            method='POST',
+            json=data
+        ):
+            return mpesa_callback()
     
-    payment = order.payment
-    
-    return jsonify({
-        "order_id": order.id,
-        "status": order.status,
-        "payment_status": payment.status if payment else "NONE",
-        "payment_method": payment.method if payment else None,
-        "mpesa_receipt": payment.mpesa_receipt if payment else None,
-        "mpesa_checkout_id": payment.mpesa_checkout_id if payment else None,
-        "paid_at": payment.paid_at.isoformat() if payment and payment.paid_at else None,
-        "total": float(order.total)
-    })
+    except Exception as e:
+        print(f"Test callback error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500

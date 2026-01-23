@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DollarSign, CreditCard, AlertCircle, CheckCircle, Clock, TrendingUp, Filter } from "lucide-react";
+import { API_URL } from '../../../utils/apiHelper';
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState([]);
@@ -8,7 +9,7 @@ export default function AdminPayments() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all"); // all, paid, pending, failed
 
-  const API_BASE_URL = "http://127.0.0.1:5000";
+ 
   const token = localStorage.getItem("adminToken");
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function AdminPayments() {
 
   const fetchPayments = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/payments`, {
+      const res = await fetch(`${API_URL}/api/admin/payments`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -40,7 +41,7 @@ export default function AdminPayments() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/payments/stats`, {
+      const res = await fetch(`${API_URL}/api/admin/payments/stats`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

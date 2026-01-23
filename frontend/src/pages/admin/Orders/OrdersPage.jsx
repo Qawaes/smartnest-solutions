@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter, Eye, Package, Phone, Mail, MapPin } from 'lucide-react';
+import { API_URL } from '../../../utils/apiHelper';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -20,7 +21,7 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/orders');
+      const response = await fetch(`${API_URL}/api/orders`)
       const data = await response.json();
       setOrders(data);
       setFilteredOrders(data);
@@ -51,11 +52,11 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      await fetch(`${API_URL}/api/orders/${orderId}/status`),{
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
-      });
+      };
       fetchOrders();
       setShowModal(false);
     } catch (error) {
@@ -138,7 +139,6 @@ export default function OrdersPage() {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -163,9 +163,6 @@ export default function OrdersPage() {
                     <span className="text-sm font-semibold text-gray-900">
                       KSh {parseFloat(order.total).toLocaleString()}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-600 capitalize">{order.payment_method}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(order.status)}`}>

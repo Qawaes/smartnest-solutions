@@ -114,14 +114,6 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-
-            <NavLink 
-              to="/auth/login" 
-              className="ml-2 px-6 py-2.5 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl font-semibold hover:from-black hover:to-gray-900 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-            >
-              <User className="w-4 h-4" />
-              Login
-            </NavLink>
           </nav>
 
           {/* MOBILE ICONS (Cart + Menu) */}
@@ -230,17 +222,6 @@ export default function Navbar() {
               <Sparkles className="w-4 h-4" />
               Custom Branding
             </NavLink>
-
-            <div className="pt-4 border-t border-gray-200">
-              <NavLink
-                to="/auth/login"
-                onClick={() => setOpen(false)}
-                className="w-full px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl font-semibold hover:from-black hover:to-gray-900 transition-all shadow-lg flex items-center justify-center gap-2"
-              >
-                <User className="w-4 h-4" />
-                Login
-              </NavLink>
-            </div>
           </nav>
         </div>
       </div>

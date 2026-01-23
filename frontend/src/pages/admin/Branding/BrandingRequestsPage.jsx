@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Eye, Calendar, Palette, FileText, Phone, Mail } from 'lucide-react';
+import { API_URL } from '../../../utils/apiHelper';
 
 export default function BrandingRequestsPage() {
   const [orders, setOrders] = useState([]);
@@ -19,7 +20,7 @@ export default function BrandingRequestsPage() {
 
   const fetchBrandingRequests = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/orders');
+      const response = awaitfetch(`${API_URL}/api/orders`);
       const data = await response.json();
       const brandingOrders = data.filter(order => order.branding !== null);
       setOrders(brandingOrders);

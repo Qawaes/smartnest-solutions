@@ -2,14 +2,21 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminRoute() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (!user) {
-    return <Navigate to="/auth/login" replace />;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (user.role !== "admin") {
-    return <Navigate to="/" replace />;
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <Outlet />;

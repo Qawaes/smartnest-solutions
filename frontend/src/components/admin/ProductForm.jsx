@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL } from '../utils/apiHelper';
 
 export default function ProductForm({
   initialData = null,
@@ -15,9 +16,9 @@ export default function ProductForm({
     is_branding: false,
   });
 
-  const [existingImages, setExistingImages] = useState([]); // from backend
-  const [images, setImages] = useState([]);                 // new File[]
-  const [previews, setPreviews] = useState([]);             // preview URLs
+  const [existingImages, setExistingImages] = useState([]);
+  const [images, setImages] = useState([]);
+  const [previews, setPreviews] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -81,7 +82,7 @@ export default function ProductForm({
     if (!confirm("Delete this image?")) return;
 
     await fetch(
-      `http://127.0.0.1:5000/api/products/images/${imageId}`,
+      `${API_URL}/api/products/images/${imageId}`, // ✅ FIXED
       { method: "DELETE" }
     );
 
@@ -115,7 +116,7 @@ export default function ProductForm({
         images.forEach(file => data.append("images", file));
 
         const imgRes = await fetch(
-          `http://127.0.0.1:5000/api/products/${product.id}/images`,
+          `${API_URL}/api/products/${product.id}/images`, // ✅ FIXED
           {
             method: "POST",
             body: data,
