@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { ShoppingCart, Check, Heart, Eye } from "lucide-react";
+import { ShoppingCart, Check, Eye, Star } from "lucide-react";
 import { useState } from "react";
 
 export default function ProductCard({ product }) {
@@ -8,12 +8,32 @@ export default function ProductCard({ product }) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  const stockQty = Number(product.stock_quantity ?? 0);
+  const inStock = stockQty > 0;
+  const discountPercent = Number(product.discount_percent ?? 0);
+  const flashSalePercent = Number(product.flash_sale_percent ?? 0);
+  const isFlashSale = Boolean(product.flash_sale_active);
+  const hasDiscount = discountPercent > 0 && product.discounted_price != null;
+  const displayPrice =
+    product.effective_price != null
+      ? Number(product.effective_price)
+      : hasDiscount
+        ? Number(product.discounted_price)
+        : Number(product.price);
+
+  const ratingAvg = Number(product.rating_avg ?? 0);
+  const ratingCount = Number(product.rating_count ?? 0);
+
   const cartItem = cart.find((item) => item.product_id === product.id);
   const inCart = Boolean(cartItem);
 
   const handleToggleCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!inStock) {
+      return;
+    }
     
     if (inCart) {
       removeFromCart(cartItem);
@@ -21,9 +41,10 @@ export default function ProductCard({ product }) {
       addToCart({
         product_id: product.id,
         name: product.name,
-        price: Number(product.price),
+        price: displayPrice,
         qty: 1,
         is_branding: product.is_branding,
+        stock_quantity: stockQty,
       });
     }
   };
@@ -73,16 +94,7 @@ export default function ProductCard({ product }) {
               isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
             }`}
           >
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-50 transition-colors group/heart"
-              aria-label="Add to wishlist"
-            >
-              <Heart className="w-5 h-5 text-gray-700 group-hover/heart:text-red-500 transition-colors" />
-            </button>
+            
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -101,6 +113,30 @@ export default function ProductCard({ product }) {
             <div className="absolute top-3 left-3">
               <span className="px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full shadow-lg">
                 Custom
+              </span>
+            </div>
+          )}
+
+          {hasDiscount && !isFlashSale && (
+            <div className="absolute bottom-3 left-3">
+              <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg">
+                -{discountPercent}%
+              </span>
+            </div>
+          )}
+
+          {isFlashSale && (
+            <div className="absolute bottom-3 left-3">
+              <span className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-full shadow-lg">
+                Flash Sale {flashSalePercent > 0 ? `-${flashSalePercent}%` : ""}
+              </span>
+            </div>
+          )}
+
+          {!inStock && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="px-4 py-2 bg-black/70 text-white text-xs font-bold rounded-full">
+                Out of Stock
               </span>
             </div>
           )}
@@ -137,20 +173,50 @@ export default function ProductCard({ product }) {
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-4">
           <span className="text-2xl font-bold text-gray-900">
-            KES {Number(product.price).toLocaleString()}
+            KES {displayPrice.toLocaleString()}
           </span>
+          {(hasDiscount || isFlashSale) && (
+            <span className="text-sm text-gray-500 line-through">
+              KES {Number(product.price).toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`w-4 h-4 ${
+                  ratingAvg >= star
+                    ? "text-yellow-500 fill-yellow-500"
+                    : "text-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+          <span>({ratingCount})</span>
+        </div>
+
+        <div className="mb-3 text-sm text-gray-600">
+          {inStock ? `Available: ${stockQty}` : "Out of stock"}
         </div>
 
         {/* Add to Cart Button */}
         <button
           onClick={handleToggleCart}
+          disabled={!inStock}
           className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${
-            inCart
+            !inStock
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              : inCart
               ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-500/30"
               : "bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-black hover:to-gray-900 hover:shadow-lg"
           }`}
         >
-          {inCart ? (
+          {!inStock ? (
+            <span>Out of Stock</span>
+          ) : inCart ? (
             <>
               <Check className="w-5 h-5" />
               <span>Added to Cart</span>

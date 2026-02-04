@@ -20,7 +20,7 @@ export default function BrandingRequestsPage() {
 
   const fetchBrandingRequests = async () => {
     try {
-      const response = awaitfetch(`${API_URL}/api/orders`);
+      const response = await fetch(`${API_URL}/api/orders`);
       const data = await response.json();
       const brandingOrders = data.filter(order => order.branding !== null);
       setOrders(brandingOrders);
@@ -146,20 +146,34 @@ export default function BrandingRequestsPage() {
                 </div>
               </div>
 
-              {order.branding && (
-                <div className="bg-purple-50 rounded-xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-purple-700 font-medium text-sm">
-                    <Palette size={16} />
-                    Branding Details
-                  </div>
-                  
-                  {order.branding.logo && (
-                    <div className="text-sm">
-                      <span className="text-gray-600">Logo: </span>
-                      <span className="text-gray-900 font-medium">{order.branding.logo}</span>
-                    </div>
-                  )}
-                  
+             {order.branding && (
+        <div className="bg-purple-50 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 text-purple-700 font-medium text-sm">
+            <Palette size={16} />
+            Branding Details
+          </div>
+          
+          {/* 🆕 Logo Image Preview */}
+          {order.branding.logo && (
+            <div className="mb-3">
+              {order.branding.logo.startsWith('http') ? (
+                <div>
+                  <span className="text-gray-600 text-sm block mb-2">Logo:</span>
+                  <img 
+                    src={order.branding.logo} 
+                    alt="Brand Logo" 
+                    className="w-full max-w-xs h-32 object-contain bg-white rounded-lg border-2 border-purple-200 p-3"
+                  />
+                </div>
+              ) : (
+                <div className="text-sm">
+                  <span className="text-gray-600">Logo: </span>
+                  <span className="text-gray-900 font-medium">{order.branding.logo}</span>
+                </div>
+              )}
+            </div>
+          )}
+    
                   {order.branding.colors && (
                     <div className="text-sm">
                       <span className="text-gray-600">Colors: </span>
@@ -267,12 +281,30 @@ export default function BrandingRequestsPage() {
                     Branding Specifications
                   </h3>
                   <div className="space-y-2 text-sm">
-                    {selectedRequest.branding?.logo && (
-                      <div>
-                        <span className="text-gray-600">Logo: </span>
+                   {selectedRequest.branding?.logo && (
+                    <div className="mb-4">
+                      <span className="text-gray-600 block mb-2">Logo:</span>
+                      {selectedRequest.branding.logo.startsWith('http') ? (
+                        <div className="bg-white rounded-lg border-2 border-purple-200 p-4 inline-block">
+                          <img 
+                            src={selectedRequest.branding.logo} 
+                            alt="Brand Logo" 
+                            className="max-w-sm max-h-48 object-contain"
+                          />
+                          <a 
+                            href={selectedRequest.branding.logo} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block text-xs text-purple-600 hover:underline mt-2"
+                          >
+                            View Full Size →
+                          </a>
+                        </div>
+                      ) : (
                         <span className="font-medium text-gray-900">{selectedRequest.branding.logo}</span>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  )}
                     {selectedRequest.branding?.colors && (
                       <div>
                         <span className="text-gray-600">Colors: </span>

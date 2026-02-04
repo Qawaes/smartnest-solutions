@@ -126,7 +126,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link 
-                  to="/about" 
+                  to="/AboutUs" 
                   className="text-gray-400 hover:text-white hover:translate-x-2 inline-block transition-all duration-300 group"
                 >
                   <span className="group-hover:border-b-2 border-purple-400">About Us</span>
@@ -134,7 +134,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link 
-                  to="/contact" 
+                  to="/Contact" 
                   className="text-gray-400 hover:text-white hover:translate-x-2 inline-block transition-all duration-300 group"
                 >
                   <span className="group-hover:border-b-2 border-purple-400">Contact</span>
@@ -142,7 +142,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link 
-                  to="/privacy" 
+                  to="/Terms" 
                   className="text-gray-400 hover:text-white hover:translate-x-2 inline-block transition-all duration-300 group"
                 >
                   <span className="group-hover:border-b-2 border-purple-400">Privacy Policy</span>
@@ -150,7 +150,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link 
-                  to="/terms" 
+                  to="/Terms" 
                   className="text-gray-400 hover:text-white hover:translate-x-2 inline-block transition-all duration-300 group"
                 >
                   <span className="group-hover:border-b-2 border-purple-400">Terms & Conditions</span>
@@ -169,19 +169,19 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-3 text-gray-400">
                 <Phone className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <a href="tel:+254700000000" className="hover:text-white transition-colors">
-                  +254 700 000 000
+                <a href="tel:+254728840848" className="hover:text-white transition-colors">
+                  +254 728840848
                 </a>
               </li>
               <li className="flex items-start gap-3 text-gray-400">
                 <Mail className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <a href="mailto:info@smartnest.co.ke" className="hover:text-white transition-colors">
-                  info@smartnest.co.ke
+                  smartnestsolutionskenya@gmail.com
                 </a>
               </li>
               <li className="pt-2">
                 <a
-                  href="https://wa.me/254700000000"
+                  href="https://wa.me/254728840848"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white px-5 py-2.5 rounded-xl font-medium hover:from-green-500 hover:to-green-400 transition-all duration-300 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 hover:scale-105"
@@ -194,25 +194,8 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* NEWSLETTER SECTION (Optional) */}
-        <div className="mt-16 pt-12 border-t border-gray-800">
-          <div className="max-w-2xl mx-auto text-center">
-            <h4 className="text-2xl font-bold text-white mb-3">Stay Updated</h4>
-            <p className="text-gray-400 mb-6">
-              Subscribe to our newsletter for exclusive deals and new arrivals
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder:text-gray-500"
-              />
-              <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
+       
+       
       </div>
 
       {/* BOTTOM BAR */}
@@ -225,14 +208,11 @@ export default function Footer() {
               in Kenya
             </p>
             <div className="flex items-center gap-6">
-              <Link to="/privacy" className="hover:text-white transition-colors">
+              <Link to="/Privacy" className="hover:text-white transition-colors">
                 Privacy
               </Link>
               <Link to="/terms" className="hover:text-white transition-colors">
                 Terms
-              </Link>
-              <Link to="/cookies" className="hover:text-white transition-colors">
-                Cookies
               </Link>
             </div>
           </div>

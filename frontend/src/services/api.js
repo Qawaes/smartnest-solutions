@@ -71,6 +71,22 @@ export async function updateOrderStatus(orderId, status) {
   return res.json();
 }
 
+// Ratings
+export async function submitProductRating(productId, rating) {
+  const res = await fetch(`${API_BASE}/products/${productId}/ratings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ rating }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to submit rating");
+  }
+
+  return res.json();
+}
+
 // Payments - M-Pesa
 export const initiateMpesaPayment = async (orderId, phone) => {
   const response = await fetch(`${API_BASE}/payments/mpesa/stk`, {

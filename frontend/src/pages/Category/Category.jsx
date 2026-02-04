@@ -6,23 +6,13 @@ import { useSearch } from "../../context/SearchContext";
 
 export default function Category() {
   const { slug } = useParams();
-  const searchContext = useSearch(); // SAFE access
-
-  const setSearch =
-    typeof searchContext === "object"
-      ? searchContext.setSearch
-      : null;
+  const { search } = useSearch();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // ✅ reset search ONLY if setter exists
-    if (typeof setSearch === "function") {
-      setSearch("");
-    }
-
     setLoading(true);
     setError("");
 
@@ -30,7 +20,7 @@ export default function Category() {
       .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch(() => setError("Failed to load products"))
       .finally(() => setLoading(false));
-  }, [slug, setSearch]);
+  }, [slug]);
 
   const titleMap = {
     gifts: "Gifts",
@@ -60,7 +50,15 @@ export default function Category() {
 
       {!loading && !error && products.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {products.map((product) => (
+          {products
+            .filter((p) =>
+              [p.name, p.description, p.category]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+                .includes(search.toLowerCase())
+            )
+            .map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

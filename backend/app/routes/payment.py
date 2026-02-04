@@ -3,6 +3,7 @@ from app.extensions import db
 from app.models.order import Order
 from app.models.payment import Payment
 from app.services.mpesa import stk_push, query_stk_status
+from app.utils.email import send_email_smtp, build_payment_confirmation_html
 from datetime import datetime
 import traceback
 
@@ -197,6 +198,18 @@ def mpesa_callback():
             
             print(f"✓ Payment {payment.id} successfully marked as PAID")
             print("=" * 80)
+
+            # Send payment confirmation email (non-blocking)
+            try:
+                if payment.order and payment.order.email:
+                    email_body = build_payment_confirmation_html(payment.order, payment)
+                    send_email_smtp(
+                        payment.order.email,
+                        "Payment Confirmed - SmartNest",
+                        email_body
+                    )
+            except Exception as e:
+                print(f"Payment email failed: {str(e)}")
         
         else:
             # Payment FAILED or CANCELLED
@@ -302,6 +315,56 @@ def get_order_payment_status(order_id):
         print(f"Payment status error: {str(e)}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
+# Add this route to your payment.py file
+
+@payment_bp.route("/orders/<int:order_id>/mark-cod-payment", methods=["POST"])
+def mark_cod_payment(order_id):
+    """
+    Mark a COD order payment as pending/confirmed
+    This is called when user selects Cash on Delivery
+    """
+    try:
+        order = Order.query.get(order_id)
+        
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+        
+        # Get or create payment record for this order
+        payment = order.payment
+        if not payment:
+            payment = Payment(
+                order_id=order.id,
+                method="cod",
+                status="PENDING"
+            )
+            db.session.add(payment)
+        else:
+            # Update existing payment to COD
+            payment.method = "cod"
+            payment.status = "PENDING"
+        
+        # Update order status
+        order.status = "CONFIRMED"
+        
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": "COD order confirmed",
+            "order_id": order.id,
+            "payment_method": "cod",
+            "status": "CONFIRMED"
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"COD marking error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500    
 
 
 @payment_bp.route("/mpesa/test-callback", methods=["POST"])

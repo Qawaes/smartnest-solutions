@@ -36,7 +36,7 @@ export default function Navbar() {
           {/* SEARCH (GLOBAL) */}
           <div className="flex-1 max-w-2xl hidden md:block">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-600 transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-focus-within:text-purple-600 transition-colors" />
               <input
                 type="text"
                 placeholder="Search gifts, home essentials, branding..."
@@ -98,7 +98,7 @@ export default function Navbar() {
                 }`
               }
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
               Custom Branding
             </NavLink>
 
@@ -107,7 +107,7 @@ export default function Navbar() {
               to="/cart" 
               className="relative ml-2 p-3 rounded-xl hover:bg-gray-100 transition-all group"
             >
-              <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-purple-600 transition-colors" />
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 group-hover:text-purple-600 transition-colors" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-lg animate-bounce">
                   {cartCount}
@@ -122,7 +122,7 @@ export default function Navbar() {
               to="/cart" 
               className="relative p-2 rounded-xl hover:bg-gray-100 transition-all"
             >
-              <ShoppingCart className="w-6 h-6 text-gray-700" />
+              <ShoppingCart className="w-5 h-5 text-gray-700" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg">
                   {cartCount}
@@ -136,9 +136,9 @@ export default function Navbar() {
               aria-label="Toggle menu"
             >
               {open ? (
-                <X className="w-6 h-6 text-gray-700" />
+                <X className="w-5 h-5 text-gray-700" />
               ) : (
-                <Menu className="w-6 h-6 text-gray-700" />
+                <Menu className="w-5 h-5 text-gray-700" />
               )}
             </button>
           </div>
@@ -155,7 +155,7 @@ export default function Navbar() {
 
           {/* MOBILE SEARCH */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search products..."

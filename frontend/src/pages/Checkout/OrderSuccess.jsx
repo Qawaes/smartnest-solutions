@@ -8,13 +8,15 @@ import {
   Phone,
   Mail,
   Truck,
-  CreditCard
+  CreditCard,
+  Banknote
 } from 'lucide-react';
 
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const orderId = searchParams.get('order_id');
+  const paymentMethodParam = searchParams.get('payment_method');
 
   const pollingRef = useRef(null);
 
@@ -44,7 +46,7 @@ export default function OrderSuccess() {
         );
         const data = await res.json();
 
-        console.log('🔁 Poll response:', data);
+        console.log('🔍 Poll response:', data);
 
         setOrderDetails(data);
         setPaymentStatus(data.payment_status || 'pending');
@@ -63,14 +65,17 @@ export default function OrderSuccess() {
 
     fetchStatus();
 
-    pollingRef.current = setInterval(fetchStatus, 3000);
+    // Only poll if payment method is M-Pesa (not COD)
+    if (paymentMethodParam !== 'cod') {
+      pollingRef.current = setInterval(fetchStatus, 3000);
+    }
 
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
       }
     };
-  }, [orderId]);
+  }, [orderId, paymentMethodParam]);
 
   // ⏳ Countdown only while pending
   useEffect(() => {
@@ -93,7 +98,56 @@ export default function OrderSuccess() {
     );
   }
 
-  // ✅ SUCCESS
+  // 💰 CASH ON DELIVERY SUCCESS
+  if (paymentMethodParam === 'cod') {
+    return (
+      <div className="max-w-3xl mx-auto py-20 px-4">
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="bg-orange-100 rounded-full p-6">
+              <CheckCircle className="w-16 h-16 text-orange-600" />
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-bold">Order Placed Successfully! 🎉</h1>
+          <p className="text-gray-600">
+            Your order has been received and will be delivered to you.
+          </p>
+
+          <div className="bg-white border rounded-xl p-6 text-left">
+            <p className="font-bold text-lg mb-3">Order #{orderDetails?.order_id || orderId}</p>
+            <p className="text-gray-700 mb-2">Total: KES {orderDetails?.total || 0}</p>
+            
+            <div className="mt-4 flex items-center gap-2 bg-orange-50 p-3 rounded-lg">
+              <Banknote className="w-5 h-5 text-orange-600" />
+              <span className="font-semibold text-orange-700">
+                Payment Method: Cash on Delivery
+              </span>
+            </div>
+
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Truck className="w-5 h-5 text-blue-600" />
+                <span className="font-semibold text-blue-900">Delivery Info</span>
+              </div>
+              <p className="text-sm text-gray-700">
+                Please have the exact amount ready when our delivery person arrives. 
+                You'll receive a call when your order is on the way.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-4">
+            <Link to="/" className="btn-primary px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold">
+              Continue Shopping
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ M-PESA SUCCESS
   if (paymentStatus === 'PAID') {
     return (
       <div className="max-w-3xl mx-auto py-20 px-4">
@@ -124,7 +178,7 @@ export default function OrderSuccess() {
           </div>
 
           <div className="flex justify-center gap-4">
-            <Link to="/" className="btn-primary">
+            <Link to="/" className="btn-primary px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold">
               Continue Shopping
             </Link>
           </div>
@@ -133,7 +187,7 @@ export default function OrderSuccess() {
     );
   }
 
-  // ⏳ PENDING
+  // ⏳ M-PESA PENDING
   if (paymentStatus === 'PENDING') {
     return (
       <div className="max-w-3xl mx-auto py-20 px-4 text-center space-y-6">
@@ -154,7 +208,7 @@ export default function OrderSuccess() {
     );
   }
 
-  // ❌ FAILED
+  // ❌ M-PESA FAILED
   return (
     <div className="max-w-3xl mx-auto py-20 px-4 text-center space-y-6">
       <div className="flex justify-center">
@@ -167,10 +221,10 @@ export default function OrderSuccess() {
       <p>No money was deducted. Please try again.</p>
 
       <div className="flex justify-center gap-4">
-        <Link to={`/checkout?order_id=${orderId}`} className="btn-primary">
+        <Link to={`/checkout?order_id=${orderId}`} className="btn-primary px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">
           Try Again
         </Link>
-        <Link to="/" className="btn-secondary">
+        <Link to="/" className="btn-secondary px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold">
           Home
         </Link>
       </div>

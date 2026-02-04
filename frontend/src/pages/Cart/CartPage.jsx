@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { useCart } from "../../context/CartContext";
 import { 
   Trash2, 
@@ -17,7 +18,11 @@ import {
 } from "lucide-react";
 
 export default function CartPage() {
-  const { cart, updateQty, removeFromCart, clearCart } = useCart();
+  const { cart, updateQty, removeFromCart, clearCart, refreshCartFromServer } = useCart();
+
+  useEffect(() => {
+    refreshCartFromServer();
+  }, [refreshCartFromServer]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const deliveryFee = subtotal >= 5000 ? 0 : 500;
@@ -208,11 +213,21 @@ export default function CartPage() {
 
                           <button
                             onClick={() => updateQty(item.product_id, item.qty + 1)}
+                            disabled={
+                              typeof item.stock_quantity === "number" &&
+                              item.qty >= item.stock_quantity
+                            }
                             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-all hover:shadow-md"
                           >
                             <Plus className="w-4 h-4 text-gray-700" />
                           </button>
                         </div>
+
+                        {typeof item.stock_quantity === "number" && (
+                          <p className="text-xs text-gray-500">
+                            Available: {item.stock_quantity}
+                          </p>
+                        )}
 
                         {/* ITEM TOTAL */}
                         <div className="text-right">
@@ -264,6 +279,11 @@ export default function CartPage() {
                       {deliveryFee === 0 ? 'FREE' : `KES ${deliveryFee.toLocaleString()}`}
                     </span>
                   </div>
+                  {deliveryFee !== 0 && (
+                    <p className="text-xs text-gray-500">
+                      Transport fee applies to orders below KES 5,000.
+                    </p>
+                  )}
 
                   {/* Divider */}
                   <div className="border-t-2 border-gray-100 pt-4">

@@ -6,8 +6,21 @@ from app.models.branding import BrandingDetail
 from app.models.product import Product
 from app.models.payment import Payment
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import cloudinary.uploader
+import os
+from app.utils.email import send_email_smtp, build_order_confirmation_html
 
 order_bp = Blueprint("orders", __name__)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def send_order_email(to_email, subject, html_body):
+    send_email_smtp(to_email, subject, html_body)
 
 
 @order_bp.route("", methods=["POST"])
@@ -68,25 +81,38 @@ def create_order():
                     "error": f"Product with ID {product_id} not found"
                 }), 404
 
-            line_total = product.price * qty
+            # Stock validation
+            if product.stock_quantity is not None and product.stock_quantity < qty:
+                db.session.rollback()
+                return jsonify({
+                    "error": f"Insufficient stock for {product.name}",
+                    "available": product.stock_quantity
+                }), 400
+
+            effective_price = product.get_effective_price()
+
+            line_total = effective_price * qty
             calculated_total += line_total
 
             order_item = OrderItem(
                 order_id=order.id,
                 product_id=product.id,
                 name=product.name,
-                price=product.price,
+                price=effective_price,
                 qty=qty,
             )
             db.session.add(order_item)
             created_items.append({
                 "name": product.name,
-                "price": float(product.price),
+                "price": float(effective_price),
                 "qty": qty
             })
+            if product.stock_quantity is not None:
+                product.stock_quantity = product.stock_quantity - qty
 
         # 3️⃣ Update total
-        order.total = calculated_total
+        delivery_fee = 0 if calculated_total >= 5000 else 500
+        order.total = calculated_total + delivery_fee
 
         # 4️⃣ Create payment record
         payment_method = data.get("payment_method", "mpesa")
@@ -105,11 +131,18 @@ def create_order():
                 logo=branding.get("logo"),
                 colors=branding.get("colors"),
                 notes=branding.get("notes"),
-                deadline=branding.get("deadline"),
+                deadline=branding.get("deadline") or None
             )
             db.session.add(branding_detail)
 
         db.session.commit()
+
+        # Send order confirmation email (non-blocking)
+        try:
+            email_body = build_order_confirmation_html(order)
+            send_order_email(order.email, "Your SmartNest Order Confirmation", email_body)
+        except Exception as e:
+            print(f"Order email failed: {str(e)}")
 
         return jsonify({
             "message": "Order placed successfully",
@@ -117,6 +150,7 @@ def create_order():
             "total": float(order.total),
             "status": order.status,
             "payment_status": payment.status,
+            "delivery_fee": float(delivery_fee),
             "items": created_items,
             "customer": {
                 "name": order.customer_name,
@@ -295,3 +329,54 @@ def cancel_order(order_id):
             "error": "Failed to cancel order",
             "details": str(e)
         }), 500
+    
+@order_bp.route("/<int:order_id>/branding/logo", methods=["POST"])
+def upload_branding_logo(order_id):
+    """Upload logo image for branding"""
+    order = Order.query.get_or_404(order_id)
+    
+    if 'logo' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file = request.files['logo']
+    
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type. Allowed: png, jpg, jpeg, gif, svg"}), 400
+    
+    try:
+        # Upload to Cloudinary (you're already using it for products)
+        result = cloudinary.uploader.upload(
+            file,
+            folder="smartnest/branding_logos",
+            allowed_formats=['png', 'jpg', 'jpeg', 'gif', 'svg']
+        )
+        
+        logo_url = result['secure_url']
+        
+        # Update or create branding detail
+        if order.branding:
+            order.branding.logo = logo_url
+        else:
+            branding = BrandingDetail(
+                order_id=order.id,
+                logo=logo_url
+            )
+            db.session.add(branding)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Logo uploaded successfully",
+            "logo_url": logo_url
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error uploading logo: {str(e)}")
+        return jsonify({
+            "error": "Failed to upload logo",
+            "details": str(e)
+        }), 500    

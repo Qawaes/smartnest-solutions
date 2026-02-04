@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import ProductCard from "../../components/products/ProductCard";
 import { useSearch } from "../../context/SearchContext";
 import { fetchProducts } from "../../services/api";
-import { Sparkles, Gift, Home as HomeIcon, Palette, Truck, Shield, CreditCard, MessageCircle, ArrowRight, Star } from "lucide-react";
+import { 
+  Sparkles, Gift, Home as HomeIcon, Palette, Truck, Shield, CreditCard, 
+  MessageCircle, ArrowRight, Star, Zap, Clock, ChevronLeft, ChevronRight,
+  TrendingUp, Tag
+} from "lucide-react";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -12,6 +16,31 @@ export default function Home() {
   const { search, setSearch } = useSearch();
   const [heroVisible, setHeroVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Carousel images - you can replace these with your actual images
+  const carouselImages = [
+    {
+      url: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200",
+      title: "Premium Gift Collection",
+      subtitle: "Perfect presents for every occasion"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200",
+      title: "Home Essentials",
+      subtitle: "Transform your living space"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=1200",
+      title: "Custom Branding Solutions",
+      subtitle: "Stand out with personalized products"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200",
+      title: "Limited Edition Items",
+      subtitle: "Exclusive products just for you"
+    }
+  ];
 
   useEffect(() => {
     // Trigger hero animation
@@ -28,199 +57,258 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Auto-advance carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+  };
+
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    [p.name, p.description, p.category]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
+  // Separate products by type
+  const flashSaleProducts = filteredProducts.filter(p => p.flash_sale_active);
+  const regularProducts = filteredProducts.filter(p => !p.flash_sale_active);
+  const visibleProducts = search ? filteredProducts : regularProducts.slice(0, 8);
+
   return (
-    <div className="relative">
-      {/* HERO SECTION - Enhanced with 3D effects and animations */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0YzAtMS4xMDUtLjg5NS0yLTItMnMtMiAuODk1LTIgMiAuODk1IDIgMiAyIDItLjg5NSAyLTJ6bTAtMjBjMC0xLjEwNS0uODk1LTItMi0ycy0yIC44OTUtMiAyIC44OTUgMiAyIDIgMi0uODk1IDItMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
+    <div className="relative bg-gray-50">
+      
+      {/* IMAGE CAROUSEL SECTION */}
+      <section className="relative h-[70vh] md:h-[80vh] overflow-hidden">
+        {/* Carousel Images */}
+        <div className="relative h-full">
+          {carouselImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <img
+                src={image.url}
+                alt={image.title}
+                className="w-full h-full object-cover"
+              />
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+            </div>
+          ))}
         </div>
 
-        {/* Floating geometric shapes */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute top-20 left-[10%] w-72 h-72 bg-gradient-to-br from-pink-400 to-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"
-            style={{ transform: `translateY(${scrollY * 0.2}px)` }}
-          />
-          <div 
-            className="absolute top-40 right-[10%] w-96 h-96 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"
-            style={{ transform: `translateY(${scrollY * 0.3}px)` }}
-          />
-          <div 
-            className="absolute -bottom-20 left-[30%] w-80 h-80 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"
-            style={{ transform: `translateY(${scrollY * 0.15}px)` }}
-          />
-        </div>
-
-        {/* Sparkle particles */}
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
-          />
-        ))}
-
-        {/* Hero content */}
-        <div className="relative z-10 px-6 py-20 text-center max-w-6xl mx-auto">
-          <div
-            className={`transition-all duration-1000 ${
-              heroVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-10"
-            }`}
-          >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 mb-8 px-5 py-2.5 bg-white/10 backdrop-blur-xl rounded-full border border-white/20 shadow-2xl">
-              <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
-              <span className="text-white font-semibold text-sm">New Arrivals • Limited Edition</span>
-            </div>
-
-            {/* Main heading with gradient text */}
-            <h1 className="text-5xl md:text-8xl font-black mb-6 leading-tight">
-              <span className="block bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-2xl">
-                SmartNest
-              </span>
-              <span className="block bg-gradient-to-r from-pink-200 via-purple-200 to-white bg-clip-text text-transparent drop-shadow-2xl">
-                Solutions
-              </span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-purple-100 max-w-3xl mx-auto mb-10 leading-relaxed">
-              Transform your space with premium gifts, stylish home essentials, and custom branding solutions crafted for excellence
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link
-                to="/category/gifts"
-                className="group relative px-10 py-5 bg-white text-gray-900 rounded-full font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl shadow-xl"
+        {/* Carousel Content */}
+        <div className="absolute inset-0 flex items-center">
+          <div className="max-w-7xl mx-auto px-6 w-full">
+            <div className="max-w-2xl">
+              <div
+                className={`transition-all duration-1000 delay-300 ${
+                  heroVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"
+                }`}
               >
-                <span className="relative z-10 flex items-center gap-2 justify-center">
-                  Explore Collection
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Link>
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 mb-6 px-5 py-2.5 bg-white/10 backdrop-blur-xl rounded-full border border-white/20">
+                  <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
+                  <span className="text-white font-semibold text-sm">
+                    {carouselImages[currentSlide].title}
+                  </span>
+                </div>
 
-              <Link
-                to="/category/custom-branding"
-                className="group px-10 py-5 bg-white/10 backdrop-blur-xl text-white rounded-full font-bold text-lg border-2 border-white/20 transition-all hover:scale-105 hover:bg-white/20 hover:shadow-2xl shadow-xl"
-              >
-                <span className="flex items-center gap-2 justify-center">
-                  <Palette className="w-5 h-5" />
-                  Custom Branding
-                </span>
-              </Link>
-            </div>
+                {/* Main heading */}
+                <h1 className="text-4xl md:text-7xl font-black mb-6 leading-tight text-white">
+                  {carouselImages[currentSlide].subtitle}
+                </h1>
 
-            {/* Stats with glass morphism */}
-            <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto">
-              {[
-                { number: "500+", label: "Premium Products" },
-                { number: "1000+", label: "Happy Customers" },
-                { number: "24/7", label: "Support Available" },
-              ].map((stat, i) => (
-                <div
-                  key={stat.label}
-                  className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl hover:bg-white/20 transition-all hover:scale-105"
-                  style={{ animationDelay: `${i * 100}ms` }}
+                <p className="text-lg md:text-xl text-gray-200 mb-8">
+                  Discover premium quality products crafted with excellence
+                </p>
+
+                {/* CTA Button */}
+                <Link
+                  to="/category/gifts"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-2xl"
                 >
-                  <div className="text-3xl md:text-5xl font-black text-white mb-2">
-                    {stat.number}
-                  </div>
-                  <div className="text-sm md:text-base text-purple-200">
-                    {stat.label}
+                  Shop Now
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Arrows */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-full transition-all z-10 border border-white/20"
+        >
+          <ChevronLeft className="w-6 h-6 text-white" />
+        </button>
+        <button
+          onClick={nextSlide}
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-full transition-all z-10 border border-white/20"
+        >
+          <ChevronRight className="w-6 h-6 text-white" />
+        </button>
+
+        {/* Dots Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {carouselImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-2 rounded-full transition-all ${
+                index === currentSlide 
+                  ? "w-8 bg-white" 
+                  : "w-2 bg-white/50 hover:bg-white/70"
+              }`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* FLASH SALES SECTION */}
+      {flashSaleProducts.length > 0 && (
+        <section className="relative py-16 px-6 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 overflow-hidden">
+          {/* Animated background */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-yellow-300 rounded-full filter blur-3xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse animation-delay-2000" />
+          </div>
+
+          <div className="relative z-10 max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl">
+                  <Zap className="w-8 h-8 text-white animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-3xl md:text-5xl font-black text-white mb-1">
+                    ⚡ Flash Sales
+                  </h2>
+                  <p className="text-white/90 text-lg">Limited time offers - Grab them fast!</p>
+                </div>
+              </div>
+
+              {/* Timer */}
+              <div className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30">
+                <Clock className="w-5 h-5 text-white" />
+                <span className="text-white font-bold">Ending Soon</span>
+              </div>
+            </div>
+
+            {/* Flash Sale Products Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {flashSaleProducts.slice(0, 4).map((product, index) => (
+                <div
+                  key={product.id}
+                  className="animate-fadeInUp"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="relative">
+                    {/* Flash Sale Badge */}
+                    <div className="absolute -top-2 -right-2 z-10 px-3 py-1 bg-yellow-400 text-gray-900 font-black text-sm rounded-full shadow-lg animate-bounce">
+                      FLASH!
+                    </div>
+                    <ProductCard product={product} />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
-            <div className="w-1 h-3 bg-white rounded-full animate-pulse" />
+            {/* View All Flash Sales */}
+            {flashSaleProducts.length > 4 && (
+              <div className="text-center mt-8">
+                <Link
+                  to="/category/gifts?filter=flash"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white text-orange-600 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-2xl"
+                >
+                  View All Flash Sales
+                  <TrendingUp className="w-5 h-5" />
+                </Link>
+              </div>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* CATEGORIES SECTION - Enhanced cards with 3D hover effects */}
-      <section className="relative py-24 px-6 bg-gradient-to-b from-gray-50 to-white">
+      {/* CATEGORIES SECTION */}
+      <section className="relative py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-block mb-4 px-4 py-2 bg-purple-100 text-purple-700 rounded-full font-semibold text-sm">
-              SHOP BY CATEGORY
+              Shop by Category
             </div>
-            <h2 className="text-4xl md:text-6xl font-black mb-4 bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 bg-clip-text text-transparent">
-              Find Your Perfect Match
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+              Explore Our Collections
             </h2>
-            <p className="text-gray-600 text-lg">Curated collections for every need</p>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Find the perfect items for every need
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { 
-                name: "Unique Gifts", 
-                icon: Gift,
-                color: "from-pink-500 via-rose-500 to-red-500", 
+                Icon: Gift, 
+                title: "Gifts", 
+                desc: "Perfect presents for loved ones",
                 link: "/category/gifts",
-                desc: "Thoughtful presents for special moments"
+                color: "from-pink-500 to-rose-600",
+                bgColor: "bg-pink-50"
               },
               { 
-                name: "Home Essentials", 
-                icon: HomeIcon,
-                color: "from-blue-500 via-cyan-500 to-teal-500", 
+                Icon: HomeIcon, 
+                title: "Home Essentials", 
+                desc: "Stylish items for your space",
                 link: "/category/home-essentials",
-                desc: "Elevate your living space"
+                color: "from-blue-500 to-cyan-600",
+                bgColor: "bg-blue-50"
               },
               { 
-                name: "Custom Branding", 
-                icon: Palette,
-                color: "from-purple-500 via-indigo-500 to-blue-500", 
+                Icon: Palette, 
+                title: "Custom Branding", 
+                desc: "Personalized products",
                 link: "/category/custom-branding",
-                desc: "Make your brand unforgettable"
+                color: "from-purple-500 to-indigo-600",
+                bgColor: "bg-purple-50"
               },
             ].map((category, index) => {
-              const IconComponent = category.icon;
+              const IconComponent = category.Icon;
               return (
                 <Link
-                  key={category.name}
+                  key={category.title}
                   to={category.link}
-                  className="group relative overflow-hidden rounded-3xl bg-white p-10 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3"
-                  style={{ animationDelay: `${index * 150}ms` }}
+                  className="group relative p-8 bg-white rounded-3xl border-2 border-gray-100 hover:border-transparent hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 >
-                  {/* Gradient overlay on hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                  
-                  {/* Pattern overlay */}
-                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMCAwaDQwdjQwSDB6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {/* Background gradient on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
                   
                   <div className="relative z-10">
-                    {/* Icon with gradient background */}
-                    <div className={`w-20 h-20 mb-6 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}>
-                      <IconComponent className="w-10 h-10 text-white" />
+                    <div className={`w-16 h-16 mb-6 rounded-2xl ${category.bgColor} flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
+                      <IconComponent className={`w-8 h-8 bg-gradient-to-br ${category.color} bg-clip-text text-transparent`} style={{ WebkitTextFillColor: 'transparent' }} />
                     </div>
-                    
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-white transition-colors">
-                      {category.name}
+                    <h3 className="font-bold text-2xl mb-3 text-gray-900 group-hover:text-purple-600 transition-colors">
+                      {category.title}
                     </h3>
-                    <p className="text-gray-600 group-hover:text-white/90 transition-colors mb-4">
-                      {category.desc}
-                    </p>
-                    <div className="flex items-center text-gray-900 group-hover:text-white font-semibold transition-colors">
-                      Shop Now 
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform" />
+                    <p className="text-gray-600 mb-4">{category.desc}</p>
+                    <div className="flex items-center gap-2 text-purple-600 font-semibold group-hover:gap-4 transition-all">
+                      Explore
+                      <ArrowRight className="w-5 h-5" />
                     </div>
                   </div>
                 </Link>
@@ -230,26 +318,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRODUCTS SECTION */}
-      <section className="py-24 px-6 bg-white">
+      {/* FEATURED PRODUCTS SECTION */}
+      <section className="py-24 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
             <div>
-              <div className="inline-block mb-3 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full font-semibold text-sm">
-                {search ? "SEARCH RESULTS" : "FEATURED COLLECTION"}
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black mb-3 text-gray-900">
-                {search ? `Results for "${search}"` : "Handpicked For You"}
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
+                Featured Products
               </h2>
               <p className="text-gray-600 text-lg">
                 {search ? "Find what you're looking for" : "Discover our most loved products"}
               </p>
             </div>
 
-            {filteredProducts.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 px-6 py-3 bg-gray-100 rounded-full">
-                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                <span className="font-bold text-gray-900">{filteredProducts.length}</span>
+            {visibleProducts.length > 0 && (
+              <div className="flex items-center gap-2 px-6 py-3 bg-white rounded-full shadow-md border border-gray-200">
+                <Tag className="w-5 h-5 text-purple-600" />
+                <span className="font-bold text-gray-900">{visibleProducts.length}</span>
                 <span className="text-gray-600">Products</span>
               </div>
             )}
@@ -268,7 +353,7 @@ export default function Home() {
           )}
 
           {error && (
-            <div className="text-center py-32 px-6">
+            <div className="text-center py-32 px-6 bg-white rounded-3xl shadow-lg">
               <div className="w-24 h-24 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
                 <span className="text-5xl">😕</span>
               </div>
@@ -276,15 +361,15 @@ export default function Home() {
               <p className="text-red-500 text-lg mb-6">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-8 py-4 bg-black text-white rounded-full font-semibold hover:bg-gray-800 transition-all hover:scale-105 shadow-lg"
+                className="px-8 py-4 bg-purple-600 text-white rounded-full font-semibold hover:bg-purple-700 transition-all hover:scale-105 shadow-lg"
               >
                 Try Again
               </button>
             </div>
           )}
 
-          {!loading && filteredProducts.length === 0 && (
-            <div className="text-center py-32 px-6">
+          {!loading && visibleProducts.length === 0 && (
+            <div className="text-center py-32 px-6 bg-white rounded-3xl shadow-lg">
               <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
                 <span className="text-5xl">🔍</span>
               </div>
@@ -302,9 +387,9 @@ export default function Home() {
             </div>
           )}
 
-          {!loading && filteredProducts.length > 0 && (
+          {!loading && visibleProducts.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {filteredProducts.map((product, index) => (
+              {visibleProducts.map((product, index) => (
                 <div
                   key={product.id}
                   className="animate-fadeInUp hover:scale-105 transition-transform duration-300"
@@ -315,13 +400,24 @@ export default function Home() {
               ))}
             </div>
           )}
+
+          {/* View More Button */}
+          {!search && regularProducts.length > 8 && (
+            <div className="text-center mt-12">
+              <Link
+                to="/category/gifts"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-full font-bold text-lg hover:scale-105 transition-all shadow-xl"
+              >
+                View All Products
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* FEATURES SECTION - Enhanced with icons and gradients */}
-      <section className="relative py-24 px-6 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900" />
+      {/* FEATURES SECTION */}
+      <section className="relative py-24 px-6 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE0YzAtMS4xMDUtLjg5NS0yLTItMnMtMiAuODk1LTIgMiAuODk1IDIgMiAyIDItLjg5NSAyLTJ6bTAtMjBjMC0xLjEwNS0uODk1LTItMi0ycy0yIC44OTUtMiAyIC44OTUgMiAyIDIgMi0uODk1IDItMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40" />
 
         <div className="relative z-10 max-w-7xl mx-auto">
@@ -381,7 +477,6 @@ export default function Home() {
 
       {/* CTA SECTION */}
       <section className="relative py-24 px-6 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 overflow-hidden">
-        {/* Animated background patterns */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse animation-delay-2000" />

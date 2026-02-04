@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { submitProductRating } from "../../services/api";
 import { 
   ShoppingCart, 
   Check, 
@@ -29,10 +30,80 @@ export default function Product() {
   const [imageLoading, setImageLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingMessage, setRatingMessage] = useState("");
+  const [flashCountdown, setFlashCountdown] = useState("");
+  const [flashCountdownLabel, setFlashCountdownLabel] = useState("");
+
+
 
   // Find if product is in cart
   const cartItem = cart.find((item) => item.product_id === product?.id);
   const inCart = Boolean(cartItem);
+
+  const stockQty = Number(product?.stock_quantity ?? 0);
+  const inStock = stockQty > 0;
+  const discountPercent = Number(product?.discount_percent ?? 0);
+  const flashSalePercent = Number(product?.flash_sale_percent ?? 0);
+  const isFlashSale = Boolean(product?.flash_sale_active);
+  const hasDiscount = discountPercent > 0 && product?.discounted_price != null;
+  const displayPrice = hasDiscount
+    ? Number(product.discounted_price)
+    : Number(product?.price || 0);
+  const effectivePrice =
+    product?.effective_price != null
+      ? Number(product.effective_price)
+      : displayPrice;
+
+  const ratingAvg = Number(product?.rating_avg ?? 0);
+  const ratingCount = Number(product?.rating_count ?? 0);
+
+  useEffect(() => {
+    if (!product?.flash_sale_start || !product?.flash_sale_end) {
+      setFlashCountdown("");
+      setFlashCountdownLabel("");
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const start = new Date(product.flash_sale_start);
+      const end = new Date(product.flash_sale_end);
+
+      let target = end;
+      let label = "Ends in";
+      if (now < start) {
+        target = start;
+        label = "Starts in";
+      }
+
+      const diff = target.getTime() - now.getTime();
+      if (diff <= 0) {
+        setFlashCountdown("");
+        setFlashCountdownLabel("");
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const text =
+        days > 0
+          ? `${days}d ${hours}h ${minutes}m ${seconds}s`
+          : `${hours}h ${minutes}m ${seconds}s`;
+
+      setFlashCountdown(text);
+      setFlashCountdownLabel(label);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [product?.flash_sale_start, product?.flash_sale_end]);
 
   useEffect(() => {
     setLoading(true);
@@ -83,21 +154,47 @@ export default function Product() {
 
   // Toggle cart function
   const handleToggleCart = () => {
+    if (!inStock) return;
     if (inCart) {
       removeFromCart(cartItem);
     } else {
       addToCart({
         product_id: product.id,
         name: product.name,
-        price: Number(product.price),
+        price: effectivePrice,
         qty: quantity,
         is_branding: product.is_branding,
+        stock_quantity: stockQty,
       });
     }
   };
 
+  const handleSubmitRating = async () => {
+    if (!selectedRating || !product?.id) return;
+    try {
+      setRatingLoading(true);
+      setRatingMessage("");
+      const data = await submitProductRating(product.id, selectedRating);
+      setProduct((prev) => ({
+        ...prev,
+        rating_avg: data.rating_avg,
+        rating_count: data.rating_count,
+      }));
+      setRatingMessage("Thanks for rating!");
+    } catch (err) {
+      setRatingMessage(err.message || "Failed to submit rating");
+    } finally {
+      setRatingLoading(false);
+    }
+  };
+
   const handleQuantityChange = (delta) => {
-    setQuantity(Math.max(1, quantity + delta));
+    const next = Math.max(1, quantity + delta);
+    if (inStock) {
+      setQuantity(Math.min(next, stockQty));
+    } else {
+      setQuantity(1);
+    }
   };
 
   const handleShare = async () => {
@@ -210,7 +307,7 @@ export default function Product() {
 
               {/* Quick Actions on Image */}
               <div className="absolute top-4 right-4 flex gap-2">
-                <button
+                {/* <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
                   className={`w-12 h-12 rounded-full backdrop-blur-xl shadow-lg flex items-center justify-center transition-all ${
                     isWishlisted
@@ -221,7 +318,7 @@ export default function Product() {
                   <Heart
                     className={`w-5 h-5 ${isWishlisted ? "fill-white" : ""}`}
                   />
-                </button>
+                </button> */}
                 <button
                   onClick={handleShare}
                   className="w-12 h-12 bg-white/90 backdrop-blur-xl rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-colors"
@@ -276,27 +373,69 @@ export default function Product() {
                 {product.name}
               </h1>
               
-              {/* Mock Rating */}
+              {/* Rating */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       className={`w-5 h-5 ${
-                        i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        ratingAvg >= i + 1 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                       }`}
                     />
                   ))}
                 </div>
-                <span className="text-gray-600 font-medium">4.0 (125 reviews)</span>
+                <span className="text-gray-600 font-medium">
+                  {ratingAvg.toFixed(1)} ({ratingCount} reviews)
+                </span>
               </div>
             </div>
 
             {/* Price */}
             <div className="flex items-baseline gap-3">
               <span className="text-4xl md:text-5xl font-black text-gray-900">
-                KES {Number(product.price).toLocaleString()}
+                KES {effectivePrice.toLocaleString()}
               </span>
+              {(hasDiscount || isFlashSale) && (
+                <span className="text-lg text-gray-500 line-through">
+                  KES {Number(product.price).toLocaleString()}
+                </span>
+              )}
+              {isFlashSale ? (
+                <span className="px-3 py-1 bg-orange-600 text-white text-sm font-bold rounded-full">
+                  Flash Sale {flashSalePercent > 0 ? `-${flashSalePercent}%` : ""}
+                </span>
+              ) : hasDiscount ? (
+                <span className="px-3 py-1 bg-red-600 text-white text-sm font-bold rounded-full">
+                  -{discountPercent}%
+                </span>
+              ) : null}
+            </div>
+
+            {flashCountdown && (
+              <div className="text-sm text-orange-700 font-semibold">
+                {flashCountdownLabel} {flashCountdown}
+              </div>
+            )}
+
+            <div className="text-sm text-gray-600">
+              {inStock ? `Available: ${stockQty}` : "Out of stock"}
+            </div>
+
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-5 h-5 ${
+                      ratingAvg >= star
+                        ? "text-yellow-500 fill-yellow-500"
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span>{ratingAvg.toFixed(1)} ({ratingCount})</span>
             </div>
 
             {/* Custom Branding Notice */}
@@ -340,28 +479,67 @@ export default function Product() {
                   <span className="w-16 text-center font-bold text-lg">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(1)}
+                    disabled={inStock && quantity >= stockQty}
                     className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
                 </div>
                 <span className="text-gray-600">
-                  Total: <span className="font-bold text-gray-900">KES {(Number(product.price) * quantity).toLocaleString()}</span>
+                  Total: <span className="font-bold text-gray-900">KES {(effectivePrice * quantity).toLocaleString()}</span>
                 </span>
               </div>
+            </div>
+
+            {/* Rating */}
+            <div className="pt-4 border-t-2 border-gray-100 space-y-3">
+              <h3 className="text-lg font-bold text-gray-900">Rate This Product</h3>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setSelectedRating(star)}
+                    className="p-1"
+                    aria-label={`Rate ${star} star`}
+                  >
+                    <Star
+                      className={`w-6 h-6 ${
+                        selectedRating >= star
+                          ? "text-yellow-500 fill-yellow-500"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+                <button
+                  onClick={handleSubmitRating}
+                  disabled={ratingLoading || selectedRating === 0}
+                  className="ml-3 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-black transition disabled:opacity-50"
+                >
+                  {ratingLoading ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+              {ratingMessage && (
+                <p className="text-sm text-gray-600">{ratingMessage}</p>
+              )}
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-3 pt-4">
               <button
                 onClick={handleToggleCart}
+                disabled={!inStock}
                 className={`w-full py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-lg ${
-                  inCart
+                  !inStock
+                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    : inCart
                     ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-500/30"
                     : "bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-black hover:to-gray-900 hover:shadow-xl"
                 }`}
               >
-                {inCart ? (
+                {!inStock ? (
+                  <span>Out of Stock</span>
+                ) : inCart ? (
                   <>
                     <Check className="w-6 h-6" />
                     <span>Added to Cart</span>

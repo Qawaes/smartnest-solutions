@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   DollarSign,
   Palette,
+  Boxes,
   LogOut,
   Menu,
   X
@@ -27,6 +28,7 @@ export default function AdminLayout() {
   const navItems = [
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/products', label: 'Products', icon: Package },
+    { path: '/admin/inventory', label: 'Inventory', icon: Boxes },
     { path: '/admin/orders', label: 'Orders', icon: ShoppingCart },
     { path: '/admin/branding', label: 'Branding Requests', icon: Palette },
     { path: '/admin/payments', label: 'Payments', icon: DollarSign },

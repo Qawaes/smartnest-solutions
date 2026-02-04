@@ -14,6 +14,8 @@ export default function ProductForm({
     price: "",
     category_id: "",
     is_branding: false,
+    stock_quantity: "",
+    discount_percent: "",
   });
 
   const [existingImages, setExistingImages] = useState([]);
@@ -32,6 +34,8 @@ export default function ProductForm({
         price: initialData.price || "",
         category_id: initialData.category?.id || "",
         is_branding: initialData.is_branding || false,
+        stock_quantity: initialData.stock_quantity ?? "",
+        discount_percent: initialData.discount_percent ?? "",
       });
 
       setExistingImages(initialData.images || []);
@@ -108,6 +112,8 @@ export default function ProductForm({
       const product = await onSubmit({
         ...form,
         price: Number(form.price),
+        stock_quantity: Number(form.stock_quantity || 0),
+        discount_percent: Number(form.discount_percent || 0),
       });
 
       /* 2️⃣ UPLOAD NEW IMAGES */
@@ -144,6 +150,8 @@ export default function ProductForm({
           price: "",
           category_id: "",
           is_branding: false,
+          stock_quantity: "",
+          discount_percent: "",
         });
       }
 
@@ -241,12 +249,45 @@ export default function ProductForm({
                   </option>
                 ))}
               </select>
-            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Stock Quantity
+            </label>
+            <input
+              name="stock_quantity"
+              type="number"
+              min="0"
+              value={form.stock_quantity}
+              onChange={handleChange}
+              placeholder="0"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+            />
           </div>
 
-          <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Discount Percent
+            </label>
             <input
-              type="checkbox"
+              name="discount_percent"
+              type="number"
+              min="0"
+              max="100"
+              value={form.discount_percent}
+              onChange={handleChange}
+              placeholder="0"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition"
+            />
+          </div>
+        </div>
+
+        <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+          <input
+            type="checkbox"
               name="is_branding"
               checked={form.is_branding}
               onChange={handleChange}

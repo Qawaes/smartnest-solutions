@@ -18,7 +18,9 @@ export default function ProductsPage() {
     description: '',
     price: '',
     category_id: '',
-    is_branding: false
+    is_branding: false,
+    stock_quantity: '',
+    discount_percent: ''
   });
   const [productImages, setProductImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
@@ -167,10 +169,17 @@ export default function ProductsPage() {
       
       const method = editingProduct ? 'PUT' : 'POST';
 
+      const payload = {
+        ...formData,
+        price: Number(formData.price),
+        stock_quantity: Number(formData.stock_quantity || 0),
+        discount_percent: Number(formData.discount_percent || 0)
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
@@ -222,7 +231,9 @@ export default function ProductsPage() {
       description: '',
       price: '',
       category_id: '',
-      is_branding: false
+      is_branding: false,
+      stock_quantity: '',
+      discount_percent: ''
     });
     setShowModal(true);
   };
@@ -238,7 +249,9 @@ export default function ProductsPage() {
       description: product.description || '',
       price: product.price,
       category_id: categoryMatch?.id || '',
-      is_branding: product.is_branding
+      is_branding: product.is_branding,
+      stock_quantity: product.stock_quantity ?? '',
+      discount_percent: product.discount_percent ?? ''
     });
     setShowModal(true);
   };
@@ -279,6 +292,14 @@ export default function ProductsPage() {
           <Plus size={20} />
           Add Product
         </button>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="px-4 py-2 bg-blue-50 rounded-lg">
+          <span className="text-sm text-blue-700 font-medium">
+            Total Products: {products.length}
+          </span>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -343,6 +364,11 @@ export default function ProductsPage() {
                     Branding
                   </span>
                 )}
+                {product.discount_percent > 0 && (
+                  <span className="absolute top-3 left-3 px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">
+                    -{product.discount_percent}%
+                  </span>
+                )}
               </div>
               
               <div className="p-5">
@@ -358,11 +384,20 @@ export default function ProductsPage() {
 
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-2xl font-bold text-gray-900">
-                    KSh {parseFloat(product.price).toLocaleString()}
+                    KSh {parseFloat(product.discounted_price ?? product.price).toLocaleString()}
                   </span>
+                  {product.discount_percent > 0 && (
+                    <span className="text-sm text-gray-500 line-through">
+                      KSh {parseFloat(product.price).toLocaleString()}
+                    </span>
+                  )}
                   <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full capitalize">
                     {product.category}
                   </span>
+                </div>
+
+                <div className="mb-4 text-sm text-gray-600">
+                  Stock: {product.stock_quantity ?? 0}
                 </div>
 
                 <div className="flex gap-2">
@@ -476,6 +511,37 @@ export default function ProductsPage() {
                 Please add categories first before creating products
               </p>
             )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Stock Quantity
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formData.stock_quantity}
+              onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="0"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Discount Percent
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={formData.discount_percent}
+              onChange={(e) => setFormData({ ...formData, discount_percent: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="0"
+            />
           </div>
         </div>
 
