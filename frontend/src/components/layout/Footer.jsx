@@ -44,7 +44,7 @@ export default function Footer() {
               </p>
               <div className="flex gap-3">
                 <a
-                  href="https://facebook.com"
+                  href="https://www.facebook.com/stntheboutique?rdid=RD1uAJmgPTGiIX9J&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19zmTfyvED%2F"
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Facebook"
@@ -74,7 +74,7 @@ export default function Footer() {
                 </a>
 
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/in/dr-lydia-mwai-phd-mmsk-20495a80?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
                   target="_blank"
                   rel="noreferrer"
                   aria-label="LinkedIn"

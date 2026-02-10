@@ -20,9 +20,15 @@ export default function BrandingRequestsPage() {
 
   const fetchBrandingRequests = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/orders`);
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
+      const response = await fetch(`${API_URL}/api/orders`, {
+        headers: {
+          Authorization: `Bearer ${token || ""}`
+        }
+      });
       const data = await response.json();
-      const brandingOrders = data.filter(order => order.branding !== null);
+      const safeOrders = Array.isArray(data) ? data : [];
+      const brandingOrders = safeOrders.filter(order => order.branding !== null);
       setOrders(brandingOrders);
       setFilteredOrders(brandingOrders);
     } catch (error) {

@@ -19,8 +19,13 @@ export default function Inventory() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch(`${API_URL}/api/products`),
+        fetch(`${API_URL}/api/products/admin`, {
+          headers: {
+            Authorization: `Bearer ${token || ""}`
+          }
+        }),
         fetch(`${API_URL}/api/categories/`)
       ]);
 
@@ -143,7 +148,10 @@ export default function Inventory() {
 
       const res = await fetch(`${API_URL}/api/products/${product.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+        },
         body: JSON.stringify(payload),
       });
 

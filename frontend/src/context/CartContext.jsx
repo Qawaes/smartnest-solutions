@@ -14,18 +14,11 @@ function cartReducer(state, action) {
       if (existing) {
         return state.map(item => {
           if (item.product_id !== action.payload.product_id) return item;
-          const maxQty =
-            action.payload.stock_quantity ?? item.stock_quantity;
           const nextQty = item.qty + action.payload.qty;
-          const clampedQty =
-            typeof maxQty === "number" ? Math.min(nextQty, maxQty) : nextQty;
-          return { ...item, qty: clampedQty };
+          return { ...item, qty: nextQty };
         });
       }
 
-      if (typeof action.payload.stock_quantity === "number" && action.payload.stock_quantity <= 0) {
-        return state;
-      }
       return [...state, action.payload];
     }
 
@@ -33,12 +26,7 @@ function cartReducer(state, action) {
       return state
         .map(item => {
           if (item.product_id !== action.payload.product_id) return item;
-          const maxQty = item.stock_quantity;
-          const nextQty =
-            typeof maxQty === "number"
-              ? Math.min(action.payload.qty, maxQty)
-              : action.payload.qty;
-          return { ...item, qty: nextQty };
+          return { ...item, qty: action.payload.qty };
         })
         .filter(item => item.qty > 0);
 
@@ -60,7 +48,6 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
-    console.log("CART:", cart); // debug (remove later)
   }, [cart]);
 
   const refreshCartFromServer = async () => {
@@ -77,17 +64,12 @@ export function CartProvider({ children }) {
         .map((item) => {
           const latest = productMap.get(item.product_id);
           if (!latest) return null;
-          const stockQty = Number(latest.stock_quantity ?? 0);
           const price = latest.effective_price ?? latest.discounted_price ?? latest.price;
-          const clampedQty =
-            typeof stockQty === "number"
-              ? Math.min(item.qty, stockQty)
-              : item.qty;
-          if (clampedQty <= 0) return null;
+          if (latest.in_stock === false) return null;
           return {
             ...item,
             price: Number(price),
-            stock_quantity: stockQty,
+            in_stock: latest.in_stock !== false,
           };
         })
         .filter(Boolean);

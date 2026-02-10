@@ -16,8 +16,8 @@ class Payment(db.Model):
     status = db.Column(db.String(30), default="PENDING", nullable=False)  # PENDING, PAID, FAILED, CANCELLED
     
     # M-Pesa specific fields
-    mpesa_checkout_id = db.Column(db.String(100), nullable=True)
-    mpesa_receipt = db.Column(db.String(50), nullable=True)
+    mpesa_checkout_id = db.Column(db.String(100), unique=True, nullable=True)
+    mpesa_receipt = db.Column(db.String(50), unique=True, nullable=True)
     
     # Payment timestamps
     paid_at = db.Column(db.DateTime, nullable=True)

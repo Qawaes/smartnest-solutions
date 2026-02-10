@@ -42,8 +42,7 @@ export default function Product() {
   const cartItem = cart.find((item) => item.product_id === product?.id);
   const inCart = Boolean(cartItem);
 
-  const stockQty = Number(product?.stock_quantity ?? 0);
-  const inStock = stockQty > 0;
+  const inStock = product?.in_stock !== false;
   const discountPercent = Number(product?.discount_percent ?? 0);
   const flashSalePercent = Number(product?.flash_sale_percent ?? 0);
   const isFlashSale = Boolean(product?.flash_sale_active);
@@ -119,7 +118,6 @@ export default function Product() {
         return res.json();
       })
       .then((data) => {
-        console.log("PRODUCT API RESPONSE:", data);
         
         // FIXED: Handle both response formats
         const products = Array.isArray(data) ? data : data.products;
@@ -130,8 +128,6 @@ export default function Product() {
         
         const found = products.find((p) => String(p.id) === String(id));
         
-        console.log("Looking for product ID:", id);
-        console.log("Found product:", found);
         
         setProduct(found);
 
@@ -164,7 +160,7 @@ export default function Product() {
         price: effectivePrice,
         qty: quantity,
         is_branding: product.is_branding,
-        stock_quantity: stockQty,
+        in_stock: inStock,
       });
     }
   };
@@ -190,11 +186,7 @@ export default function Product() {
 
   const handleQuantityChange = (delta) => {
     const next = Math.max(1, quantity + delta);
-    if (inStock) {
-      setQuantity(Math.min(next, stockQty));
-    } else {
-      setQuantity(1);
-    }
+    setQuantity(inStock ? next : 1);
   };
 
   const handleShare = async () => {
@@ -206,7 +198,6 @@ export default function Product() {
           url: window.location.href,
         });
       } catch (err) {
-        console.log("Share cancelled");
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
@@ -419,7 +410,7 @@ export default function Product() {
             )}
 
             <div className="text-sm text-gray-600">
-              {inStock ? `Available: ${stockQty}` : "Out of stock"}
+              {inStock ? "In stock" : "Out of stock"}
             </div>
 
             <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -479,7 +470,7 @@ export default function Product() {
                   <span className="w-16 text-center font-bold text-lg">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(1)}
-                    disabled={inStock && quantity >= stockQty}
+                    disabled={!inStock}
                     className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"
                   >
                     <Plus className="w-5 h-5" />

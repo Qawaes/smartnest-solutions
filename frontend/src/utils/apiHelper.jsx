@@ -9,4 +9,3 @@ const getApiUrl = () => {
 };
 
 export const API_URL = getApiUrl();
-console.log('🌐 API URL:', API_URL);

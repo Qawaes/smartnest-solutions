@@ -14,7 +14,6 @@ const getApiBase = () => {
 
 export const API_BASE = getApiBase();
 
-console.log('API Base URL:', API_BASE);
 
 // Products
 export async function fetchProducts() {

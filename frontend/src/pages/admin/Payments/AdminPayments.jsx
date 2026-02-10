@@ -10,7 +10,7 @@ export default function AdminPayments() {
   const [filter, setFilter] = useState("all"); // all, paid, pending, failed
 
  
-  const token = localStorage.getItem("adminToken");
+  const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
 
   useEffect(() => {
     fetchPayments();
@@ -53,6 +53,29 @@ export default function AdminPayments() {
       }
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+    }
+  };
+
+  const updatePaymentStatus = async (paymentId, status) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/payments/${paymentId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update payment status");
+      }
+
+      await fetchPayments();
+      fetchStats();
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -284,7 +307,18 @@ export default function AdminPayments() {
                     </td>
 
                     <td className="px-6 py-4">
-                      {getStatusBadge(p.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(p.status)}
+                        <select
+                          className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                          value={p.status}
+                          onChange={(e) => updatePaymentStatus(p.payment_id, e.target.value)}
+                        >
+                          {["PENDING", "PAID", "FAILED", "CANCELLED"].map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
 
                     <td className="px-6 py-4">

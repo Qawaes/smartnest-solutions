@@ -1,16 +1,52 @@
 from flask import Blueprint, request, jsonify
-from app.extensions import db
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from app.extensions import db, limiter
 from app.models.order import Order
 from app.models.payment import Payment
 from app.services.mpesa import stk_push, query_stk_status
 from app.utils.email import send_email_smtp, build_payment_confirmation_html
 from datetime import datetime
 import traceback
+import logging
+from decimal import Decimal, InvalidOperation
+import os
 
 payment_bp = Blueprint("payments", __name__)
+logger = logging.getLogger(__name__)
+
+
+def _get_order_token():
+    return (
+        request.headers.get("X-Order-Token")
+        or request.args.get("order_token")
+        or (request.get_json(silent=True) or {}).get("order_token")
+    )
+
+
+def _normalize_phone(phone):
+    if not phone:
+        return None
+    p = str(phone).strip()
+    if p.startswith("+"):
+        p = p[1:]
+    if p.startswith("0"):
+        p = "254" + p[1:]
+    elif not p.startswith("254"):
+        p = "254" + p
+    return p
+
+
+def _amounts_match(a, b):
+    try:
+        da = Decimal(str(a)).quantize(Decimal("0.01"))
+        dbv = Decimal(str(b)).quantize(Decimal("0.01"))
+        return da == dbv
+    except (InvalidOperation, TypeError):
+        return False
 
 
 @payment_bp.route("/mpesa/stk", methods=["POST"])
+@limiter.limit("5 per minute")
 def initiate_stk():
     """
     Initiate M-Pesa STK Push
@@ -23,10 +59,7 @@ def initiate_stk():
     """
     data = request.get_json()
     
-    print("=" * 50)
-    print("STK PUSH REQUEST:")
-    print(f"Data: {data}")
-    print("=" * 50)
+    logger.info("STK push request received")
     
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -41,6 +74,10 @@ def initiate_stk():
     order = Order.query.get(order_id)
     if not order:
         return jsonify({"error": "Order not found"}), 404
+    
+    order_token = _get_order_token()
+    if not order_token or order_token != order.order_access_token:
+        return jsonify({"error": "Unauthorized"}), 403
     
     # Get or create payment record
     payment = order.payment
@@ -59,23 +96,17 @@ def initiate_stk():
     
     # Initiate STK Push
     try:
-        print(f"Initiating STK for Order {order_id}, Amount: {order.total}")
         result = stk_push(
             phone=phone,
             amount=order.total,
             order_id=order.id
         )
         
-        print(f"STK Result: {result}")
-        
         if result.get("success"):
             # Store checkout request ID
             payment.mpesa_checkout_id = result["checkout_request_id"]
             payment.status = "PENDING"
             db.session.commit()
-            
-            print(f"Payment updated with checkout_id: {payment.mpesa_checkout_id}")
-            
             return jsonify({
                 "success": True,
                 "message": "STK push sent successfully",
@@ -90,7 +121,7 @@ def initiate_stk():
     
     except Exception as e:
         db.session.rollback()
-        print(f"STK Push Error: {str(e)}")
+        logger.error("STK Push Error: %s", str(e))
         traceback.print_exc()
         return jsonify({
             "success": False,
@@ -99,6 +130,7 @@ def initiate_stk():
 
 
 @payment_bp.route("/mpesa/callback", methods=["POST", "OPTIONS"])
+@limiter.exempt
 def mpesa_callback():
     """
     M-Pesa callback endpoint
@@ -117,22 +149,18 @@ def mpesa_callback():
         data = request.get_json()
         
         # Log the callback
-        print("=" * 80)
-        print("M-PESA CALLBACK RECEIVED:")
-        print(f"Timestamp: {datetime.now().isoformat()}")
-        print(f"Data: {data}")
-        print("=" * 80)
+        logger.info("M-Pesa callback received at %s", datetime.now().isoformat())
         
         # Validate data structure
         if not data or "Body" not in data:
-            print("ERROR: Invalid callback structure - missing Body")
+            logger.warning("Invalid callback structure - missing Body")
             return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
         
         # Extract STK callback data
         stk_callback = data.get("Body", {}).get("stkCallback", {})
         
         if not stk_callback:
-            print("ERROR: Invalid callback structure - missing stkCallback")
+            logger.warning("Invalid callback structure - missing stkCallback")
             return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
         
         # Extract key fields
@@ -141,10 +169,7 @@ def mpesa_callback():
         checkout_request_id = stk_callback.get("CheckoutRequestID")
         merchant_request_id = stk_callback.get("MerchantRequestID")
         
-        print(f"CheckoutRequestID: {checkout_request_id}")
-        print(f"MerchantRequestID: {merchant_request_id}")
-        print(f"ResultCode: {result_code}")
-        print(f"ResultDesc: {result_desc}")
+        logger.info("Callback IDs received for checkout %s", checkout_request_id)
         
         # Find payment by checkout request ID
         payment = Payment.query.filter_by(
@@ -152,18 +177,15 @@ def mpesa_callback():
         ).first()
         
         if not payment:
-            print(f"WARNING: Payment not found for CheckoutRequestID: {checkout_request_id}")
+            logger.warning("Payment not found for CheckoutRequestID: %s", checkout_request_id)
             # Still return 200 - this is not an error from M-Pesa's perspective
             return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
         
-        print(f"Found payment ID: {payment.id} for Order ID: {payment.order_id}")
-        print(f"Current payment status: {payment.status}")
+        if payment.status == "PAID":
+            return jsonify({"ResultCode": 0, "ResultDesc": "Success"}), 200
         
         # Process based on result code
         if result_code == 0:
-            # Payment SUCCESSFUL
-            print("✓ Payment SUCCESSFUL - Processing...")
-            
             # Extract callback metadata
             callback_metadata = stk_callback.get("CallbackMetadata", {})
             items = callback_metadata.get("Item", [])
@@ -176,14 +198,24 @@ def mpesa_callback():
                 if name and value is not None:
                     payment_details[name] = value
             
-            print(f"Payment Details: {payment_details}")
-            
             # Get M-Pesa receipt number
             mpesa_receipt = payment_details.get("MpesaReceiptNumber")
             amount = payment_details.get("Amount")
             phone = payment_details.get("PhoneNumber")
-            
-            print(f"Receipt: {mpesa_receipt}, Amount: {amount}, Phone: {phone}")
+
+            # Verify against M-Pesa query endpoint (defense-in-depth)
+            status_check = query_stk_status(checkout_request_id)
+            if str(status_check.get("ResultCode")) != "0":
+                logger.warning("Status query failed for %s", checkout_request_id)
+                return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
+
+            if not _amounts_match(amount, payment.order.total if payment.order else None):
+                logger.warning("Amount mismatch for payment %s", payment.id)
+                return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
+
+            if payment.order and _normalize_phone(payment.order.phone) != _normalize_phone(phone):
+                logger.warning("Phone mismatch for payment %s", payment.id)
+                return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"}), 200
             
             # Update payment status
             payment.mark_as_paid(mpesa_receipt=mpesa_receipt)
@@ -191,13 +223,9 @@ def mpesa_callback():
             # Update order status
             if payment.order:
                 payment.order.status = "CONFIRMED"
-                print(f"Order {payment.order.id} status updated to CONFIRMED")
             
             # Commit to database
             db.session.commit()
-            
-            print(f"✓ Payment {payment.id} successfully marked as PAID")
-            print("=" * 80)
 
             # Send payment confirmation email (non-blocking)
             try:
@@ -209,26 +237,18 @@ def mpesa_callback():
                         email_body
                     )
             except Exception as e:
-                print(f"Payment email failed: {str(e)}")
+                logger.error("Payment email failed: %s", str(e))
         
         else:
-            # Payment FAILED or CANCELLED
-            print(f"✗ Payment FAILED - ResultCode: {result_code}")
-            print(f"Reason: {result_desc}")
-            
             # Mark payment as failed
             payment.mark_as_failed()
             
             # Update order status
             if payment.order:
                 payment.order.status = "PAYMENT_FAILED"
-                print(f"Order {payment.order.id} status updated to PAYMENT_FAILED")
             
             # Commit to database
             db.session.commit()
-            
-            print(f"✓ Payment {payment.id} marked as FAILED")
-            print("=" * 80)
         
         # CRITICAL: Always return 200 OK to M-Pesa
         return jsonify({
@@ -238,11 +258,8 @@ def mpesa_callback():
     
     except Exception as e:
         # Log the error but still return 200
-        print("!" * 80)
-        print(f"EXCEPTION in M-Pesa callback: {str(e)}")
-        print("Full traceback:")
+        logger.error("EXCEPTION in M-Pesa callback: %s", str(e))
         traceback.print_exc()
-        print("!" * 80)
         
         # Try to rollback any pending transaction
         try:
@@ -258,11 +275,16 @@ def mpesa_callback():
 
 
 @payment_bp.route("/mpesa/status/<checkout_request_id>", methods=["GET"])
+@jwt_required()
 def check_payment_status(checkout_request_id):
     """
     Check the status of an M-Pesa transaction
     """
     try:
+        claims = get_jwt()
+        if not claims or claims.get("role") != "admin":
+            return jsonify({"error": "Admin access required"}), 403
+
         # Query M-Pesa API
         result = query_stk_status(checkout_request_id)
         
@@ -297,6 +319,10 @@ def get_order_payment_status(order_id):
         
         if not order:
             return jsonify({"error": "Order not found"}), 404
+
+        order_token = _get_order_token()
+        if not order_token or order_token != order.order_access_token:
+            return jsonify({"error": "Unauthorized"}), 403
         
         payment = order.payment
         
@@ -305,8 +331,6 @@ def get_order_payment_status(order_id):
             "status": order.status,
             "payment_status": payment.status if payment else "NONE",
             "payment_method": payment.method if payment else None,
-            "mpesa_receipt": payment.mpesa_receipt if payment else None,
-            "mpesa_checkout_id": payment.mpesa_checkout_id if payment else None,
             "paid_at": payment.paid_at.isoformat() if payment and payment.paid_at else None,
             "total": float(order.total)
         })
@@ -319,6 +343,7 @@ def get_order_payment_status(order_id):
 # Add this route to your payment.py file
 
 @payment_bp.route("/orders/<int:order_id>/mark-cod-payment", methods=["POST"])
+@limiter.limit("10 per minute")
 def mark_cod_payment(order_id):
     """
     Mark a COD order payment as pending/confirmed
@@ -329,6 +354,10 @@ def mark_cod_payment(order_id):
         
         if not order:
             return jsonify({"error": "Order not found"}), 404
+
+        order_token = _get_order_token()
+        if not order_token or order_token != order.order_access_token:
+            return jsonify({"error": "Unauthorized"}), 403
         
         # Get or create payment record for this order
         payment = order.payment
@@ -374,6 +403,8 @@ def test_callback():
     Useful for testing without actual M-Pesa transactions
     """
     try:
+        if not os.getenv("ENABLE_TEST_CALLBACK"):
+            return jsonify({"error": "Not found"}), 404
         # Get test data or use sample
         data = request.get_json() or {
             "Body": {

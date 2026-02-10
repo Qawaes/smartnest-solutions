@@ -18,23 +18,32 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
       const [ordersRes, productsRes] = await Promise.all([
-      fetch(`${API_URL}/api/orders`),
+      fetch(`${API_URL}/api/orders`, {
+        headers: {
+          Authorization: `Bearer ${token || ""}`
+        }
+      }),
       fetch(`${API_URL}/api/products`)
       ]);
 
+      if (!ordersRes.ok) {
+        throw new Error("Failed to load orders");
+      }
       const orders = await ordersRes.json();
       const products = await productsRes.json();
 
-      const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
-      const pendingOrders = orders.filter(o => o.status === 'pending').length;
+      const safeOrders = Array.isArray(orders) ? orders : [];
+      const totalRevenue = safeOrders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+      const pendingOrders = safeOrders.filter(o => o.status === 'pending').length;
 
       setStats({
-        totalOrders: orders.length,
+        totalOrders: safeOrders.length,
         totalRevenue: totalRevenue,
         totalProducts: products.length,
         pendingOrders: pendingOrders,
-        recentOrders: orders.slice(0, 5)
+        recentOrders: safeOrders.slice(0, 5)
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

@@ -1,18 +1,30 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.extensions import db
 from app.models.payment import Payment
 from app.models.order import Order
+from datetime import datetime
 
 admin_payment_bp = Blueprint("admin_payments", __name__)
 
+def _require_admin():
+    claims = get_jwt()
+    if not claims or claims.get("role") != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+    return None
 
 @admin_payment_bp.route("/test", methods=["GET"])
+@jwt_required()
 def test_route():
-    """Test route without authentication"""
+    """Test route (admin only)"""
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     return jsonify({"message": "Admin payments route is working!"}), 200
 
 
 @admin_payment_bp.route("", methods=["GET", "OPTIONS"])
+@jwt_required()
 def get_all_payments():
     """
     Get all payments with order and customer details
@@ -21,6 +33,9 @@ def get_all_payments():
     # Handle OPTIONS request for CORS
     if request.method == "OPTIONS":
         return jsonify({}), 200
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
         
     try:
         # Query all payments with related order data
@@ -71,6 +86,7 @@ def get_all_payments():
 
 
 @admin_payment_bp.route("/stats", methods=["GET", "OPTIONS"])
+@jwt_required()
 def get_payment_stats():
     """
     Get payment statistics for dashboard
@@ -78,6 +94,9 @@ def get_payment_stats():
     # Handle OPTIONS request for CORS
     if request.method == "OPTIONS":
         return jsonify({}), 200
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
         
     try:
         total_payments = Payment.query.count()
@@ -108,3 +127,50 @@ def get_payment_stats():
     except Exception as e:
         print(f"Error fetching payment stats: {str(e)}")
         return jsonify({"error": "Failed to fetch payment statistics"}), 500
+
+
+@admin_payment_bp.route("/<int:payment_id>/status", methods=["PUT"])
+@jwt_required()
+def update_payment_status(payment_id):
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    new_status = data.get("status")
+
+    valid_statuses = ["PENDING", "PAID", "FAILED", "CANCELLED"]
+    if new_status not in valid_statuses:
+        return jsonify({
+            "error": f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        }), 400
+
+    payment = Payment.query.get_or_404(payment_id)
+    old_status = payment.status
+    payment.status = new_status
+
+    if new_status == "PAID":
+        if not payment.paid_at:
+            payment.paid_at = datetime.utcnow()
+        # If order is still pending, move to processing
+        if payment.order and payment.order.status == "pending":
+            payment.order.status = "processing"
+    else:
+        payment.paid_at = None
+        if payment.order and payment.order.status == "processing":
+            payment.order.status = "pending"
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "message": "Payment status updated",
+            "payment_id": payment.id,
+            "old_status": old_status,
+            "new_status": payment.status
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "Failed to update payment status",
+            "details": str(e)
+        }), 500

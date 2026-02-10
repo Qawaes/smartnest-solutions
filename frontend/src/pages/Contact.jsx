@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { 
   Mail, Phone, MapPin, Clock, Send, CheckCircle, 
-  MessageCircle, Facebook, Instagram, Twitter, Linkedin,
+  MessageCircle, Facebook, Instagram, Twitter, Linkedin, 
   AlertCircle, Loader2
 } from "lucide-react";
 
@@ -58,7 +58,6 @@ export default function Contact() {
 
     // Simulate API call - replace with your actual API endpoint
     setTimeout(() => {
-      console.log("Form submitted:", formData);
       setStatus("success");
       setFormData({
         name: "",
@@ -362,10 +361,10 @@ export default function Contact() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Follow Us</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { icon: Facebook, name: "Facebook", color: "from-blue-600 to-blue-700", link: "#" },
+                    { icon: Facebook, name: "Facebook", color: "from-blue-600 to-blue-700", link: "https://www.facebook.com/stntheboutique?rdid=RD1uAJmgPTGiIX9J&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19zmTfyvED%2F" },
                     { icon: Instagram, name: "Instagram", color: "from-pink-600 to-purple-600", link: "#" },
                     { icon: Twitter, name: "Twitter", color: "from-sky-500 to-blue-600", link: "#" },
-                    { icon: Linkedin, name: "LinkedIn", color: "from-blue-700 to-blue-800", link: "#" }
+                    { icon: Linkedin, name: "LinkedIn", color: "from-blue-700 to-blue-800", link: "https://www.linkedin.com/in/dr-lydia-mwai-phd-mmsk-20495a80?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" }
                   ].map((social) => {
                     const IconComponent = social.icon;
                     return (

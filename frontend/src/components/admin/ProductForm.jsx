@@ -87,7 +87,12 @@ export default function ProductForm({
 
     await fetch(
       `${API_URL}/api/products/images/${imageId}`, // ✅ FIXED
-      { method: "DELETE" }
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+        }
+      }
     );
 
     setExistingImages(prev =>
@@ -125,6 +130,9 @@ export default function ProductForm({
           `${API_URL}/api/products/${product.id}/images`, // ✅ FIXED
           {
             method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+            },
             body: data,
           }
         );

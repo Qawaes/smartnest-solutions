@@ -21,10 +21,20 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/orders`)
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
+      const response = await fetch(`${API_URL}/api/orders`, {
+        headers: {
+          Authorization: `Bearer ${token || ""}`
+        }
+      })
       const data = await response.json();
-      setOrders(data);
-      setFilteredOrders(data);
+      if (Array.isArray(data)) {
+        setOrders(data);
+        setFilteredOrders(data);
+      } else {
+        setOrders([]);
+        setFilteredOrders([]);
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -52,11 +62,15 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await fetch(`${API_URL}/api/orders/${orderId}/status`),{
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
+      await fetch(`${API_URL}/api/orders/${orderId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token || ""}`
+        },
         body: JSON.stringify({ status: newStatus })
-      };
+      });
       fetchOrders();
       setShowModal(false);
     } catch (error) {

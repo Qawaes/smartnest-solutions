@@ -42,7 +42,7 @@ def get_access_token():
     }
     
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         return response.json()["access_token"]
     except Exception as e:
@@ -107,7 +107,7 @@ def stk_push(phone, amount, order_id):
     }
     
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=20)
         result = response.json()
         
         # M-Pesa returns ResponseCode "0" for success
@@ -169,7 +169,7 @@ def query_stk_status(checkout_request_id):
     }
     
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=20)
         response.raise_for_status()
         return response.json()
     except Exception as e:

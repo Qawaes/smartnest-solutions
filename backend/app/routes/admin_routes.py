@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.models.order import Order
 from app.models.product import Product
 from app.models.branding import BrandingDetail
@@ -9,8 +9,8 @@ admin_bp = Blueprint("admin", __name__)
 
 def admin_required():
     """Decorator to check if user has admin role"""
-    current_user = get_jwt_identity()
-    if not current_user or current_user.get("role") != "admin":
+    claims = get_jwt()
+    if not claims or claims.get("role") != "admin":
         return jsonify({"error": "Admin access required"}), 403
     return None
 

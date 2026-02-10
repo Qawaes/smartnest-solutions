@@ -7,31 +7,21 @@ import {
   Phone,
   Mail,
   MapPin,
-  CreditCard,
-  Truck,
   Package,
   Sparkles,
   Palette,
   FileText,
   Calendar,
   Lock,
-  CheckCircle,
   ArrowRight,
-  ArrowLeft,
   AlertCircle,
-  Smartphone,
-  Banknote,
   Shield,
   X,
-  Trash2,
 } from "lucide-react";
 
 export default function Checkout() {
   const { cart, clearCart } = useCart();
   const navigate = useNavigate();
-
-  const [step, setStep] = useState(1);
-  const [orderId, setOrderId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,6 +33,8 @@ export default function Checkout() {
 
   // API Base URL - update this for production
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+  const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER )
+    .replace(/[^\d]/g, "");
 
   /* ================= FORM STATE ================= */
   const [billing, setBilling] = useState({
@@ -56,13 +48,11 @@ const [branding, setBranding] = useState({
   colors: "",
   notes: "",
   deadline: "",
-  logoFile: null,      // 🆕 Store the file
+  logoFile: null,       // 🆕 Store the file
   logoPreview: null,   // 🆕 Store preview URL
 });
 
-  const [paymentMethod, setPaymentMethod] = useState("mpesa");
-
-  /* ================= STEP 1: CREATE ORDER ================= */
+  /* ================= CREATE ORDER + REDIRECT TO WHATSAPP ================= */
   const handleContinueToPayment = async () => {
   setError("");
 
@@ -100,11 +90,14 @@ const [branding, setBranding] = useState({
         notes: branding.notes,
         deadline: branding.deadline,
       } : null,
-      payment_method: paymentMethod,
     };
 
     const res = await createOrder(orderPayload);
     const newOrderId = res.order_id || res.id;
+    const orderToken = res.order_access_token;
+    if (newOrderId && orderToken) {
+      sessionStorage.setItem(`order_token_${newOrderId}`, orderToken);
+    }
     
     // 🆕 Upload logo image if provided
     if (hasBrandingItems && branding.logoFile && newOrderId) {
@@ -118,12 +111,32 @@ const [branding, setBranding] = useState({
         });
       } catch (logoErr) {
         console.error('Logo upload failed:', logoErr);
-        // Don't block checkout if logo upload fails
+        
       }
     }
 
-    setOrderId(newOrderId);
-    setStep(2);
+    const itemsSummary = cart
+      .map((item) => `${item.qty} x ${item.name} @ KES ${item.price.toLocaleString()}`)
+      .join("\n");
+    const message = [
+      `New order #${newOrderId}`,
+      `Name: ${billing.name}`,
+      `Phone: ${billing.phone}`,
+      `Email: ${billing.email}`,
+      `Address: ${billing.address}`,
+      `Items:`,
+      itemsSummary,
+      `Subtotal: KES ${subtotal.toLocaleString()}`,
+      `Delivery: KES ${deliveryFee.toLocaleString()}`,
+      `Total: KES ${total.toLocaleString()}`,
+      "",
+      "Please share payment details."
+    ].join("\n");
+
+    clearCart();
+    const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    window.open(waLink, "_blank", "noopener,noreferrer");
+    navigate("/", { replace: true });
   } catch (err) {
     console.error("Order creation error:", err);
     setError("Failed to create order. Please try again.");
@@ -131,88 +144,15 @@ const [branding, setBranding] = useState({
     setLoading(false);
   }
 };
-  /* ================= STEP 2: PAYMENT ================= */
-  const handlePayment = async () => {
-    setError("");
-
-    if (!orderId) {
-      setError("Order ID is missing. Please try again.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // CASH ON DELIVERY - FIXED
-      if (paymentMethod === "cod") {
-        // Mark COD in backend (creates/updates payment + order status)
-        const codRes = await fetch(
-          `${API_BASE_URL}/api/payments/orders/${orderId}/mark-cod-payment`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-        const codData = await codRes.json();
-        if (!codRes.ok || !codData.success) {
-          console.error("COD update failed:", codData);
-          setError(codData.error || "Failed to confirm COD payment");
-          return;
-        }
-
-        // Clear cart and redirect to success page with COD indicator
-        clearCart();
-        navigate(`/order-success?order_id=${orderId}&payment_method=cod`);
-        return;
-      }
-
-      // MPESA STK PUSH
-      const res = await fetch(`${API_BASE_URL}/api/payments/mpesa/stk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: orderId,
-          phone: billing.phone,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        // Payment initiation failed
-        console.error("STK Push failed:", data);
-        setError(data.error || "Failed to initiate payment");
-        
-        // Still redirect to show the error state
-        navigate(`/order-success?order_id=${orderId}&status=failed`);
-        return;
-      }
-
-      // STK Push sent successfully - redirect to pending page
-      console.log("STK Push sent successfully:", data);
-      clearCart();
-      navigate(`/order-success?order_id=${orderId}&status=pending`);
-
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError("Failed to start payment. Please try again.");
-      
-      // On error, redirect to failed page if we have an orderId
-      if (orderId) {
-        navigate(`/order-success?order_id=${orderId}&status=failed`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+ 
 
   /* ================= UI ================= */
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 sm:py-12 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 mb-4">
             Secure Checkout
           </h1>
           <p className="text-gray-600 text-lg">
@@ -223,14 +163,9 @@ const [branding, setBranding] = useState({
         {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex items-center justify-center gap-4 max-w-2xl mx-auto">
-            {/* Step 1 */}
             <div className="flex items-center gap-3">
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${
-                  step >= 1
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                    : "bg-gray-200 text-gray-400"
-                }`}
+                className="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
               >
                 1
               </div>
@@ -238,41 +173,16 @@ const [branding, setBranding] = useState({
                 Details
               </span>
             </div>
-
-            <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500 ${
-                  step >= 2 ? "w-full" : "w-0"
-                }`}
-              />
-            </div>
-
-            {/* Step 2 */}
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${
-                  step >= 2
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                    : "bg-gray-200 text-gray-400"
-                }`}
-              >
-                2
-              </div>
-              <span className="hidden sm:block font-semibold text-gray-700">
-                Payment
-              </span>
-            </div>
           </div>
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT COLUMN - Forms */}
+         
           <div className="lg:col-span-2">
-            {/* STEP 1: Billing & Branding */}
-            {step === 1 && (
+            
               <div className="space-y-8">
-                {/* Billing Information */}
+               
                 <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-gray-100">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center">
@@ -317,7 +227,7 @@ const [branding, setBranding] = useState({
                         required
                       />
                       <p className="text-xs text-gray-500 mt-2">
-                        For M-Pesa payment and delivery updates
+                        For delivery updates
                       </p>
                     </div>
 
@@ -488,139 +398,6 @@ const [branding, setBranding] = useState({
                   </div>
                 )}
               </div>
-            )}
-
-            {/* STEP 2: Payment Method */}
-            {step === 2 && (
-              <div className="space-y-8">
-                <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-gray-100">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center">
-                      <CreditCard className="w-6 h-6 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-black text-gray-900">
-                      Payment Method
-                    </h2>
-                  </div>
-
-                  {/* Payment Options */}
-                  <div className="space-y-4">
-                    {/* M-Pesa Option */}
-                    <label
-                      className={`block cursor-pointer transition-all ${
-                        paymentMethod === "mpesa"
-                          ? "ring-2 ring-green-600"
-                          : "hover:border-gray-300"
-                      }`}
-                    >
-                      <div
-                        className={`flex items-center gap-4 p-6 border-2 rounded-2xl transition-all ${
-                          paymentMethod === "mpesa"
-                            ? "border-green-600 bg-green-50"
-                            : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          checked={paymentMethod === "mpesa"}
-                          onChange={() => setPaymentMethod("mpesa")}
-                          className="w-5 h-5 text-green-600 focus:ring-green-600"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
-                              <Smartphone className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-gray-900">
-                                M-Pesa
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Lipa Na M-Pesa
-                              </p>
-                            </div>
-                          </div>
-                          {paymentMethod === "mpesa" && (
-                            <div className="mt-4 p-4 bg-white rounded-xl border border-green-200">
-                              <p className="text-sm text-gray-700 leading-relaxed mb-3">
-                                You'll receive an STK push notification on your
-                                phone ({billing.phone}). Enter your M-Pesa PIN
-                                to complete the payment.
-                              </p>
-                              <div className="flex items-start gap-2 text-xs text-green-700 bg-green-50 p-3 rounded-lg">
-                                <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                <span>
-                                  Instant confirmation • Secure payment
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </label>
-
-                    {/* Cash on Delivery Option */}
-                    <label
-                      className={`block cursor-pointer transition-all ${
-                        paymentMethod === "cod"
-                          ? "ring-2 ring-orange-600"
-                          : "hover:border-gray-300"
-                      }`}
-                    >
-                      <div
-                        className={`flex items-center gap-4 p-6 border-2 rounded-2xl transition-all ${
-                          paymentMethod === "cod"
-                            ? "border-orange-600 bg-orange-50"
-                            : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          checked={paymentMethod === "cod"}
-                          onChange={() => setPaymentMethod("cod")}
-                          className="w-5 h-5 text-orange-600 focus:ring-orange-600"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center">
-                              <Banknote className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-gray-900">
-                                Cash on Delivery
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Nyeri area only
-                              </p>
-                            </div>
-                          </div>
-                          {paymentMethod === "cod" && (
-                            <div className="mt-4 p-4 bg-white rounded-xl border border-orange-200">
-                              <p className="text-sm text-gray-700 leading-relaxed">
-                                Pay with cash when your order is delivered. This
-                                option is only available for deliveries within
-                                Nyeri.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-
-                  {/* Back Button */}
-                  <button
-                    onClick={() => setStep(1)}
-                    className="mt-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold transition-colors"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                    Back to Details
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* RIGHT COLUMN - Order Summary (Sticky) */}
@@ -709,53 +486,23 @@ const [branding, setBranding] = useState({
                 )}
 
                 {/* Action Button */}
-                {step === 1 && (
-                  <button
-                    onClick={handleContinueToPayment}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Continue to Payment</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </button>
-                )}
-
-                {step === 2 && (
-                  <button
-                    onClick={handlePayment}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>
-                          {paymentMethod === "mpesa" 
-                            ? "Sending STK Push..." 
-                            : "Processing..."}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-5 h-5" />
-                        <span>
-                          {paymentMethod === "mpesa" 
-                            ? "Pay with M-Pesa" 
-                            : "Complete Order"}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={handleContinueToPayment}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Preparing WhatsApp...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5" />
+                      <span>Complete Order on WhatsApp</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Security Badge */}
@@ -767,8 +514,7 @@ const [branding, setBranding] = useState({
                   </h3>
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed">
-                  Your payment information is encrypted and secure. We never
-                  store your M-Pesa PIN or card details.
+                  You will be redirected to WhatsApp to receive payment details.
                 </p>
               </div>
             </div>

@@ -15,6 +15,7 @@ class Order(db.Model):
     # Order Details
     total = db.Column(db.Numeric(10, 2), nullable=False)
     status = db.Column(db.String(30), default="pending", nullable=False)
+    order_access_token = db.Column(db.String(128), unique=True, nullable=False, index=True)
 
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

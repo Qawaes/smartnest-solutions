@@ -2,15 +2,17 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
-    get_jwt_identity
+    get_jwt_identity,
+    get_jwt
 )
 from app.models.admin import AdminUser
-from app.extensions import db
+from app.extensions import db, limiter
 from datetime import datetime, timedelta
 import os
-import random
 import resend
 import logging
+import secrets
+import hmac
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +31,7 @@ MAX_OTP_ATTEMPTS = 5
 # -------------------------
 
 def generate_otp():
-    return "".join(str(random.randint(0, 9)) for _ in range(OTP_LENGTH))
+    return "".join(str(secrets.randbelow(10)) for _ in range(OTP_LENGTH))
 
 def send_email_resend(to_email, subject, html_body):
     """
@@ -69,6 +71,7 @@ def send_email_resend(to_email, subject, html_body):
 # -------------------------
 
 @admin_auth_bp.route("/request-otp", methods=["POST"])
+@limiter.limit("5 per minute")
 def request_otp():
     """Request OTP - POST endpoint"""
     try:
@@ -117,7 +120,7 @@ def request_otp():
 
         # Generate new OTP
         otp = generate_otp()
-        logger.info(f"Generated OTP: {otp}")  # Remove in production!
+        # Do not log OTP values
 
         admin.otp_code = otp
         admin.otp_expires = datetime.utcnow() + timedelta(minutes=OTP_EXPIRY_MINUTES)
@@ -157,6 +160,7 @@ def request_otp():
 
 
 @admin_auth_bp.route("/verify-otp", methods=["POST"])
+@limiter.limit("10 per minute")
 def verify_otp():
     """Verify OTP and login"""
     try:
@@ -188,7 +192,7 @@ def verify_otp():
             return jsonify({"error": "Too many attempts"}), 429
 
         # Verify OTP
-        if admin.otp_code != otp:
+        if not hmac.compare_digest(str(admin.otp_code), str(otp)):
             admin.otp_attempts += 1
             db.session.commit()
             remaining = MAX_OTP_ATTEMPTS - admin.otp_attempts
@@ -204,8 +208,8 @@ def verify_otp():
         db.session.commit()
 
         token = create_access_token(
-            identity={
-                "id": admin.id,
+            identity=str(admin.id),
+            additional_claims={
                 "email": admin.email,
                 "role": "admin"
             },
@@ -233,11 +237,11 @@ def verify_token():
     """Verify JWT token"""
     try:
         identity = get_jwt_identity()
-
-        if identity.get("role") != "admin":
+        claims = get_jwt()
+        if claims.get("role") != "admin":
             return jsonify({"error": "Unauthorized"}), 403
 
-        admin = AdminUser.query.get(identity["id"])
+        admin = AdminUser.query.get(identity)
         if not admin:
             return jsonify({"error": "Admin not found"}), 404
 
@@ -245,7 +249,7 @@ def verify_token():
             "valid": True,
             "admin": {
                 "id": admin.id,
-                "email": admin.email,
+                "email": claims.get("email") or admin.email,
                 "last_login": admin.last_login.isoformat() if admin.last_login else None
             }
         }), 200

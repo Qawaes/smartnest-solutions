@@ -12,8 +12,16 @@ export function AuthProvider({ children }) {
     verifyToken();
   }, []);
 
+  const getToken = () =>
+    localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
+
+  const clearToken = () => {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("adminToken");
+  };
+
   const verifyToken = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getToken();
     if (!token) {
       setLoading(false);
       return;
@@ -30,11 +38,11 @@ export function AuthProvider({ children }) {
         const data = await response.json();
         setUser(data.admin);
       } else {
-        localStorage.removeItem("admin_token");
+        clearToken();
       }
     } catch (error) {
       console.error("Token verification failed:", error);
-      localStorage.removeItem("admin_token");
+      clearToken();
     } finally {
       setLoading(false);
     }
@@ -70,12 +78,13 @@ export function AuthProvider({ children }) {
     }
 
     localStorage.setItem("admin_token", data.access_token);
+    localStorage.setItem("adminToken", data.access_token);
     setUser(data.admin);
     return data;
   };
 
   const logout = async () => {
-    const token = localStorage.getItem("admin_token");
+    const token = getToken();
     
     if (token) {
       try {
@@ -90,7 +99,7 @@ export function AuthProvider({ children }) {
       }
     }
     
-    localStorage.removeItem("admin_token");
+    clearToken();
     setUser(null);
   };
 

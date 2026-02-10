@@ -11,6 +11,8 @@ export default function Category() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 16;
 
   useEffect(() => {
     setLoading(true);
@@ -22,11 +24,28 @@ export default function Category() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [slug, search]);
+
   const titleMap = {
     gifts: "Gifts",
     "home-essentials": "Home Essentials",
     "custom-branding": "Custom Branding",
   };
+
+  const filteredProducts = products.filter((p) =>
+    [p.name, p.description, p.category]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const visibleProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
 
   return (
     <div className="space-y-8">
@@ -48,19 +67,48 @@ export default function Category() {
         </p>
       )}
 
-      {!loading && !error && products.length > 0 && (
+      {!loading && !error && filteredProducts.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {products
-            .filter((p) =>
-              [p.name, p.description, p.category]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase()
-                .includes(search.toLowerCase())
-            )
-            .map((product) => (
+          {visibleProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
+        </div>
+      )}
+
+      {!loading && !error && filteredProducts.length > pageSize && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            className="px-4 py-2 rounded border text-sm font-semibold disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          {Array.from({ length: totalPages }).map((_, idx) => {
+            const pageNumber = idx + 1;
+            return (
+              <button
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
+                className={`w-10 h-10 rounded border text-sm font-semibold ${
+                  pageNumber === safePage
+                    ? "bg-gray-900 text-white border-gray-900"
+                    : "bg-white text-gray-800"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage === totalPages}
+            className="px-4 py-2 rounded border text-sm font-semibold disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

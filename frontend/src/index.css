@@ -1,6 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
 .nav-link {
   @apply text-gray-700 hover:text-black transition;
 }

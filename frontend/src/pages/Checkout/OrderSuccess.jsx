@@ -17,6 +17,7 @@ export default function OrderSuccess() {
   const navigate = useNavigate();
   const orderId = searchParams.get('order_id');
   const paymentMethodParam = searchParams.get('payment_method');
+  const orderToken = searchParams.get('order_token') || sessionStorage.getItem(`order_token_${orderId}`);
 
   const pollingRef = useRef(null);
 
@@ -42,11 +43,15 @@ export default function OrderSuccess() {
     const fetchStatus = async () => {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/api/payments/order/${orderId}/payment-status`
+          `${API_BASE_URL}/api/payments/order/${orderId}/payment-status`,
+          {
+            headers: {
+              "X-Order-Token": orderToken || "",
+            },
+          }
         );
         const data = await res.json();
 
-        console.log('🔍 Poll response:', data);
 
         setOrderDetails(data);
         setPaymentStatus(data.payment_status || 'pending');
@@ -167,14 +172,10 @@ export default function OrderSuccess() {
             <p className="font-bold">Order #{orderDetails.order_id}</p>
             <p>Total: KES {orderDetails.total}</p>
 
-            {orderDetails.mpesa_receipt && (
-              <div className="mt-3 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-green-600" />
-                <span className="font-mono">
-                  {orderDetails.mpesa_receipt}
-                </span>
-              </div>
-            )}
+            <div className="mt-3 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-gray-600">Receipt available on request</span>
+            </div>
           </div>
 
           <div className="flex justify-center gap-4">

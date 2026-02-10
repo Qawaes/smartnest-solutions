@@ -5,6 +5,7 @@ from app.models.category import Category
 from app.models.product_image import ProductImage
 from app.models.product_rating import ProductRating
 from app.extensions import db
+from flask_jwt_extended import jwt_required, get_jwt
 
 product_bp = Blueprint("products", __name__)
 
@@ -17,6 +18,12 @@ def parse_iso_datetime(value):
         return datetime.fromisoformat(value)
     except Exception:
         return None
+
+def _require_admin():
+    claims = get_jwt()
+    if not claims or claims.get("role") != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+    return None
 
 # GET (ALL or BY CATEGORY)
 @product_bp.route("", methods=["GET", "OPTIONS"])
@@ -44,7 +51,6 @@ def get_products():
             "price": float(p.price),
             "category": p.category.slug,
             "is_branding": p.is_branding,
-            "stock_quantity": p.stock_quantity,
             "discount_percent": p.discount_percent,
             "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
             "effective_price": float(p.get_effective_price()),
@@ -63,11 +69,51 @@ def get_products():
 
     return jsonify(result)
 
+@product_bp.route("/admin", methods=["GET"])
+@jwt_required()
+def get_products_admin():
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
+
+    products = Product.query.all()
+    result = []
+    for p in products:
+        primary_image = None
+        if p.images:
+            primary = next((img for img in p.images if img.is_primary), None)
+            primary_image = primary.image_url if primary else p.images[0].image_url
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "price": float(p.price),
+            "category": p.category.slug,
+            "is_branding": p.is_branding,
+            "stock_quantity": p.stock_quantity,
+            "discount_percent": p.discount_percent,
+            "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
+            "effective_price": float(p.get_effective_price()),
+            "flash_sale_active": p.is_flash_sale_active(),
+            "flash_sale_percent": p.flash_sale_percent,
+            "flash_sale_start": p.flash_sale_start.isoformat() if p.flash_sale_start else None,
+            "flash_sale_end": p.flash_sale_end.isoformat() if p.flash_sale_end else None,
+            "rating_avg": round(p.rating_sum / p.rating_count, 2) if p.rating_count > 0 else 0,
+            "rating_count": p.rating_count,
+            "in_stock": p.stock_quantity > 0,
+            "image": primary_image,
+            "images": [img.to_dict() for img in p.images],
+        })
+    return jsonify(result)
 
 
 # CREATE PRODUCT
 @product_bp.route("", methods=["POST"])
+@jwt_required()
 def create_product():
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     data = request.get_json()
 
     stock_quantity = data.get("stock_quantity", 0)
@@ -116,7 +162,11 @@ def create_product():
 
 # UPDATE PRODUCT
 @product_bp.route("/<int:id>", methods=["PUT"])
+@jwt_required()
 def update_product(id):
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     product = Product.query.get_or_404(id)
     data = request.json
 
@@ -149,7 +199,11 @@ def update_product(id):
 
 # DELETE PRODUCT
 @product_bp.route("/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_product(id):
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     product = Product.query.get_or_404(id)
 
     db.session.delete(product)
@@ -188,7 +242,6 @@ def get_products_by_category(slug):
             "price": float(p.price),
             "category": p.category.slug,
             "is_branding": p.is_branding,
-            "stock_quantity": p.stock_quantity,
             "discount_percent": p.discount_percent,
             "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
             "effective_price": float(p.get_effective_price()),

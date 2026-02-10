@@ -8,8 +8,7 @@ export default function ProductCard({ product }) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const stockQty = Number(product.stock_quantity ?? 0);
-  const inStock = stockQty > 0;
+  const inStock = product.in_stock !== false;
   const discountPercent = Number(product.discount_percent ?? 0);
   const flashSalePercent = Number(product.flash_sale_percent ?? 0);
   const isFlashSale = Boolean(product.flash_sale_active);
@@ -44,7 +43,7 @@ export default function ProductCard({ product }) {
         price: displayPrice,
         qty: 1,
         is_branding: product.is_branding,
-        stock_quantity: stockQty,
+        in_stock: inStock,
       });
     }
   };
@@ -199,7 +198,7 @@ export default function ProductCard({ product }) {
         </div>
 
         <div className="mb-3 text-sm text-gray-600">
-          {inStock ? `Available: ${stockQty}` : "Out of stock"}
+          {inStock ? "In stock" : "Out of stock"}
         </div>
 
         {/* Add to Cart Button */}

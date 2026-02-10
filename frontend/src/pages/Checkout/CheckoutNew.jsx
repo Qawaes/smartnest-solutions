@@ -134,7 +134,6 @@
 //       }
 
 //       // Success - redirect to pending page
-//       console.log("STK Push successful:", data);
 //       clearCart();
 //       navigate(`/order-success?order_id=${orderId}&status=pending`);
 //     } catch (err) {

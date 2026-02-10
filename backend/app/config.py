@@ -12,10 +12,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    SECRET_KEY = os.getenv('SECRET_KEY')
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     
     # SMTP Email Configuration
@@ -31,6 +31,11 @@ class Config:
     CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
     CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
     CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
+
+    # WhatsApp Cloud API
+    WHATSAPP_CLOUD_API_TOKEN = os.getenv('WHATSAPP_CLOUD_API_TOKEN')
+    WHATSAPP_PHONE_NUMBER_ID = os.getenv('WHATSAPP_PHONE_NUMBER_ID')
+    WHATSAPP_OWNER_NUMBER = os.getenv('WHATSAPP_OWNER_NUMBER', '+254728840848')
     
     # M-Pesa (if you're using it)
     MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')

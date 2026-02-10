@@ -3,13 +3,24 @@ from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.extensions import db
 from cloudinary.uploader import upload
+from flask_jwt_extended import jwt_required, get_jwt
 
 product_image_bp = Blueprint("product_images", __name__)
+
+def _require_admin():
+    claims = get_jwt()
+    if not claims or claims.get("role") != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+    return None
 @product_image_bp.route(
     "/<int:product_id>/images",
     methods=["POST"]
 )
+@jwt_required()
 def upload_product_images(product_id):
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     product = Product.query.get_or_404(product_id)
 
     files = request.files.getlist("images")
@@ -51,7 +62,11 @@ def upload_product_images(product_id):
     ]), 201
 
 @product_image_bp.route("/images/<int:image_id>", methods=["DELETE"])
+@jwt_required()
 def delete_product_image(image_id):
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     image = ProductImage.query.get_or_404(image_id)
 
     # Optional: delete from Cloudinary here

@@ -35,8 +35,13 @@ export default function ProductsPage() {
 
   const fetchData = async () => {
     try {
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("adminToken");
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch(`${API_URL}/api/products`),
+        fetch(`${API_URL}/api/products/admin`, {
+          headers: {
+            Authorization: `Bearer ${token || ""}`
+          }
+        }),
         fetch(`${API_URL}/api/categories/`)
       ]);
       
@@ -47,7 +52,6 @@ export default function ProductsPage() {
       const productsData = await productsRes.json();
       const categoriesData = await categoriesRes.json();
       
-      console.log('Categories loaded:', categoriesData);
       
       setProducts(productsData);
       setCategories(categoriesData);
@@ -114,6 +118,9 @@ export default function ProductsPage() {
 
       const response = await fetch(`${API_URL}/api/products/${productId}/images`, { // ✅ Dynamic URL
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+        },
         body: uploadFormData
       });
 
@@ -139,7 +146,10 @@ export default function ProductsPage() {
 
     try {
       const response = await fetch(`${API_URL}/api/products/images/${imageId}`, { // ✅ Dynamic URL
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+        }
       });
 
       if (response.ok) {
@@ -178,7 +188,10 @@ export default function ProductsPage() {
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+        },
         body: JSON.stringify(payload)
       });
 
@@ -193,6 +206,9 @@ export default function ProductsPage() {
 
           await fetch(`${API_URL}/api/products/${savedProduct.id}/images`, { // ✅ Dynamic URL
             method: 'POST',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+            },
             body: uploadFormData
           });
         }
@@ -214,7 +230,10 @@ export default function ProductsPage() {
     
     try {
       await fetch(`${API_URL}/api/products/${id}`, { // ✅ Dynamic URL
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("adminToken") || ""}`
+        }
       });
       fetchData();
     } catch (error) {

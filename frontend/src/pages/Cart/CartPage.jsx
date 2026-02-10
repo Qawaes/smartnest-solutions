@@ -213,19 +213,16 @@ export default function CartPage() {
 
                           <button
                             onClick={() => updateQty(item.product_id, item.qty + 1)}
-                            disabled={
-                              typeof item.stock_quantity === "number" &&
-                              item.qty >= item.stock_quantity
-                            }
+                            disabled={item.in_stock === false}
                             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-all hover:shadow-md"
                           >
                             <Plus className="w-4 h-4 text-gray-700" />
                           </button>
                         </div>
 
-                        {typeof item.stock_quantity === "number" && (
+                        {item.in_stock === false && (
                           <p className="text-xs text-gray-500">
-                            Available: {item.stock_quantity}
+                            Out of stock
                           </p>
                         )}
 

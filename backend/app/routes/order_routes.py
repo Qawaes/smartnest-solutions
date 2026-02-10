@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.extensions import db
 from app.models.order import Order
 from app.models.order_item import OrderItem
@@ -9,7 +10,9 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import cloudinary.uploader
 import os
+import secrets
 from app.utils.email import send_email_smtp, build_order_confirmation_html
+from app.services.whatsapp import send_order_whatsapp_notification
 
 order_bp = Blueprint("orders", __name__)
 
@@ -18,6 +21,11 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def _require_admin():
+    claims = get_jwt()
+    if not claims or claims.get("role") != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+    return None
 
 def send_order_email(to_email, subject, html_body):
     send_email_smtp(to_email, subject, html_body)
@@ -55,6 +63,7 @@ def create_order():
             address=customer["address"],
             total=0,
             status="pending",
+            order_access_token=secrets.token_urlsafe(32),
         )
 
         db.session.add(order)
@@ -115,10 +124,9 @@ def create_order():
         order.total = calculated_total + delivery_fee
 
         # 4️⃣ Create payment record
-        payment_method = data.get("payment_method", "mpesa")
         payment = Payment(
             order_id=order.id,
-            method=payment_method,
+            method="manual",
             status="PENDING"
         )
         db.session.add(payment)
@@ -144,9 +152,16 @@ def create_order():
         except Exception as e:
             print(f"Order email failed: {str(e)}")
 
+        # Notify owner via WhatsApp (non-blocking)
+        try:
+            send_order_whatsapp_notification(order, created_items, delivery_fee)
+        except Exception as e:
+            print(f"WhatsApp notification failed: {str(e)}")
+
         return jsonify({
             "message": "Order placed successfully",
             "order_id": order.id,
+            "order_access_token": order.order_access_token,
             "total": float(order.total),
             "status": order.status,
             "payment_status": payment.status,
@@ -171,7 +186,11 @@ def create_order():
 
 
 @order_bp.route("", methods=["GET"])
+@jwt_required()
 def get_orders():
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     try:
         status = request.args.get("status")
         
@@ -224,8 +243,12 @@ def get_orders():
 
 
 @order_bp.route("/<int:order_id>", methods=["GET"])
+@jwt_required()
 def get_order_detail(order_id):
     """Get a single order by ID"""
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     order = Order.query.get_or_404(order_id)
     
     return jsonify({
@@ -264,7 +287,11 @@ def get_order_detail(order_id):
 
 
 @order_bp.route("/<int:order_id>/status", methods=["PUT"])
+@jwt_required()
 def update_order_status(order_id):
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     data = request.get_json()
     
     if not data or "status" not in data:
@@ -302,8 +329,12 @@ def update_order_status(order_id):
 
 
 @order_bp.route("/<int:order_id>", methods=["DELETE"])
+@jwt_required()
 def cancel_order(order_id):
     """Cancel an order (only if pending)"""
+    auth_error = _require_admin()
+    if auth_error:
+        return auth_error
     order = Order.query.get_or_404(order_id)
     
     # Only allow cancellation of pending orders
