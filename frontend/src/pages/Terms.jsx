@@ -7,7 +7,7 @@ export default function Terms() {
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-28 px-6 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      <section className="relative py-16 sm:py-20 md:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-500 rounded-full filter blur-3xl animate-pulse animation-delay-2000" />
@@ -19,10 +19,10 @@ export default function Terms() {
             <span className="text-white font-semibold text-sm">Legal Information</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
             Terms & Conditions
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
             Please read these terms carefully before using our services
           </p>
           <p className="text-white/70 mt-4">Last Updated: February 2026</p>
@@ -31,7 +31,7 @@ export default function Terms() {
 
       {/* Quick Navigation */}
       <section className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[
               { name: "Introduction", id: "introduction" },
@@ -55,9 +55,9 @@ export default function Terms() {
       </section>
 
       {/* Main Content */}
-      <section className="py-16 px-6">
+      <section className="py-14 sm:py-16 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 md:p-12">
+          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 sm:p-8 md:p-12">
             
             {/* Introduction */}
             <div id="introduction" className="mb-16 scroll-mt-24">
@@ -65,9 +65,9 @@ export default function Terms() {
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
                   <Scale className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-gray-900">1. Introduction</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900">1. Introduction</h2>
               </div>
-              <div className="space-y-4 text-gray-700 leading-relaxed">
+              <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed">
                 <p>
                   Welcome to SmartNest Solutions ("we", "our", or "us"). These Terms and Conditions govern your use 
                   of our website and services. By accessing or using our platform, you agree to be bound by these terms.
@@ -92,9 +92,9 @@ export default function Terms() {
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-gray-900">2. Account Terms</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900">2. Account Terms</h2>
               </div>
-              <div className="space-y-4 text-gray-700 leading-relaxed">
+              <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed">
                 <p>When you create an account with us, you agree to:</p>
                 <ul className="space-y-3 ml-6">
                   <li className="flex items-start gap-3">
@@ -130,16 +130,16 @@ export default function Terms() {
                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
                   <ShoppingCart className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-gray-900">3. Products and Services</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900">3. Products and Services</h2>
               </div>
-              <div className="space-y-4 text-gray-700 leading-relaxed">
-                <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">Product Information</h3>
+              <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-6 mb-3">Product Information</h3>
                 <p>
                   We strive to display accurate product information, including descriptions, images, and pricing. 
                   However, we do not guarantee that all information is error-free, complete, or current.
                 </p>
                 
-                <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">Product Availability</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-6 mb-3">Product Availability</h3>
                 <ul className="space-y-2 ml-6">
                   <li className="flex items-start gap-3">
                     <span className="text-purple-600 font-bold">•</span>
@@ -159,7 +159,7 @@ export default function Terms() {
                   </li>
                 </ul>
 
-                <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">Custom Branding</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-6 mb-3">Custom Branding</h3>
                 <p>
                   For custom branding orders, you must provide all necessary designs and information. 
                   Production time varies based on order complexity. Custom orders are non-refundable once 
@@ -174,10 +174,10 @@ export default function Terms() {
                 <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-gray-900">4. Payments and Pricing</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900">4. Payments and Pricing</h2>
               </div>
-              <div className="space-y-4 text-gray-700 leading-relaxed">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Payment Methods</h3>
+              <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">Payment Methods</h3>
                 <p>We accept the following payment methods:</p>
                 <div className="grid md:grid-cols-2 gap-4 my-4">
                   <div className="bg-green-50 p-4 rounded-xl border border-green-200">

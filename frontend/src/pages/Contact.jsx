@@ -4,6 +4,7 @@ import {
   MessageCircle, Facebook, Instagram, Twitter, Linkedin, 
   AlertCircle, Loader2
 } from "lucide-react";
+import { API_URL } from "../utils/apiHelper";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ export default function Contact() {
   });
   const [status, setStatus] = useState(""); // idle, loading, success, error
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
 
   const validateForm = () => {
     const newErrors = {};
@@ -55,9 +57,20 @@ export default function Contact() {
     }
 
     setStatus("loading");
+    setSubmitError("");
 
-    // Simulate API call - replace with your actual API endpoint
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_URL}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send message");
+      }
+
       setStatus("success");
       setFormData({
         name: "",
@@ -66,10 +79,12 @@ export default function Contact() {
         subject: "",
         message: ""
       });
-      
-      // Reset success message after 5 seconds
+
       setTimeout(() => setStatus("idle"), 5000);
-    }, 2000);
+    } catch (err) {
+      setStatus("error");
+      setSubmitError(err.message || "Failed to send message");
+    }
   };
 
   const handleChange = (e) => {
@@ -90,7 +105,7 @@ export default function Contact() {
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 px-6 overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
+      <section className="relative py-16 sm:py-20 md:py-32 px-4 sm:px-6 overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse animation-delay-2000" />
@@ -102,19 +117,19 @@ export default function Contact() {
             <span className="text-white font-semibold text-sm">We'd Love to Hear From You</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
             Get in Touch
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
             Have questions? Need help with an order? We're here to assist you every step of the way
           </p>
         </div>
       </section>
 
       {/* Contact Information Cards */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-6 -mt-32 relative z-10 mb-20">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 -mt-24 sm:-mt-32 relative z-10 mb-16 sm:mb-20">
             {[
               {
                 icon: Phone,
@@ -154,7 +169,7 @@ export default function Contact() {
                 <a
                   key={item.title}
                   href={item.action || "#"}
-                  className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100"
+                  className="group bg-white p-6 sm:p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100"
                 >
                   <div className={`w-14 h-14 mb-6 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
                     <IconComponent className="w-7 h-7 text-white" />
@@ -171,12 +186,12 @@ export default function Contact() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Contact Form - Takes 2 columns */}
             <div className="lg:col-span-2">
-              <div className="bg-white p-8 md:p-10 rounded-3xl shadow-lg border border-gray-100">
+              <div className="bg-white p-6 sm:p-8 md:p-10 rounded-3xl shadow-lg border border-gray-100">
                 <div className="mb-8">
-                  <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-3">
                     Send Us a Message
                   </h2>
-                  <p className="text-gray-600 text-lg">
+                  <p className="text-gray-600 text-base sm:text-lg">
                     Fill out the form below and we'll get back to you as soon as possible
                   </p>
                 </div>
@@ -187,6 +202,16 @@ export default function Contact() {
                     <div>
                       <p className="text-green-800 font-semibold">Message sent successfully!</p>
                       <p className="text-green-600 text-sm">We'll get back to you soon.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {status === "error" && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                    <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-red-800 font-semibold">Failed to send message</p>
+                      <p className="text-red-600 text-sm">{submitError || "Please try again later."}</p>
                     </div>
                   </div>
                 )}

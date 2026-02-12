@@ -175,7 +175,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-3 text-gray-400">
                 <Mail className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <a href="mailto:info@smartnest.co.ke" className="hover:text-white transition-colors">
+                <a href="mailto:info@smartnestsolutionskenya@gmail.com" className="hover:text-white transition-colors">
                   smartnestsolutionskenya@gmail.com
                 </a>
               </li>

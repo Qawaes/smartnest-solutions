@@ -19,7 +19,8 @@ export const API_BASE = getApiBase();
 export async function fetchProducts() {
   const res = await fetch(`${API_BASE}/products`);
   if (!res.ok) throw new Error("Failed to fetch products");
-  return res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.items || []);
 }
 
 export async function fetchCategories() {
@@ -30,6 +31,19 @@ export async function fetchCategories() {
 
 export async function fetchProductsByCategory(slug) {
   const res = await fetch(`${API_BASE}/products/category/${slug}`);
+  if (!res.ok) throw new Error("Failed to fetch category products");
+  const data = await res.json();
+  return Array.isArray(data) ? data : (data.items || []);
+}
+
+export async function fetchProductsPaged({ page = 1, perPage = 20 } = {}) {
+  const res = await fetch(`${API_BASE}/products?page=${page}&per_page=${perPage}`);
+  if (!res.ok) throw new Error("Failed to fetch products");
+  return res.json();
+}
+
+export async function fetchProductsByCategoryPaged(slug, { page = 1, perPage = 16 } = {}) {
+  const res = await fetch(`${API_BASE}/products/category/${slug}?page=${page}&per_page=${perPage}`);
   if (!res.ok) throw new Error("Failed to fetch category products");
   return res.json();
 }

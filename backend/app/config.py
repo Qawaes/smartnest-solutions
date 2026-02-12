@@ -23,6 +23,7 @@ class Config:
     SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
     SMTP_EMAIL = os.getenv('SMTP_EMAIL')
     SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
+    CONTACT_EMAIL = os.getenv('CONTACT_EMAIL')
     
     # App Configuration
     APP_URL = os.getenv('APP_URL', 'http://localhost:3000')

@@ -108,7 +108,7 @@ export default function Home() {
     <div className="relative bg-white">
       
       {/* HERO CAROUSEL SECTION */}
-      <section className="relative h-[75vh] md:h-[85vh] overflow-hidden bg-gray-900">
+      <section className="relative h-[70vh] sm:h-[75vh] md:h-[85vh] overflow-hidden bg-gray-900">
         {/* Carousel Images */}
         <div className="relative h-full">
           {carouselImages.map((image, index) => (
@@ -131,7 +131,7 @@ export default function Home() {
 
         {/* Hero Content */}
         <div className="absolute inset-0 flex items-center">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="max-w-3xl">
               <div
                 className={`transition-all duration-1000 ${
@@ -147,11 +147,11 @@ export default function Home() {
                 </div>
 
                 {/* Main Heading */}
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight text-white tracking-tight">
+                <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 leading-tight text-white tracking-tight">
                   {carouselImages[currentSlide].subtitle}
                 </h1>
 
-                <p className="text-xl md:text-2xl text-gray-200 mb-10 leading-relaxed max-w-2xl">
+                <p className="text-base sm:text-xl md:text-2xl text-gray-200 mb-8 sm:mb-10 leading-relaxed max-w-2xl">
                   Trusted by businesses and individuals for premium quality products and exceptional service
                 </p>
 
@@ -159,7 +159,7 @@ export default function Home() {
                 <div className="flex flex-wrap gap-4">
                   <Link
                     to="/category/gifts"
-                    className="group inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+                    className="group inline-flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-base sm:text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
                   >
                     Explore Products
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -167,7 +167,7 @@ export default function Home() {
                   
                   <a
                     href="#why-choose-us"
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 rounded-lg font-semibold text-lg transition-all"
+                    className="inline-flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 rounded-lg font-semibold text-base sm:text-lg transition-all"
                   >
                     Learn More
                   </a>
@@ -203,7 +203,7 @@ export default function Home() {
         {/* Navigation Controls */}
         <button
           onClick={prevSlide}
-          className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all z-10 group"
+          className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all z-10 group hidden sm:flex"
           aria-label="Previous slide"
         >
           <ChevronLeft className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
@@ -211,14 +211,14 @@ export default function Home() {
         
         <button
           onClick={nextSlide}
-          className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all z-10 group"
+          className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all z-10 group hidden sm:flex"
           aria-label="Next slide"
         >
           <ChevronRight className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
         </button>
 
         {/* Slide Indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+        <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
           {carouselImages.map((_, index) => (
             <button
               key={index}
@@ -236,20 +236,20 @@ export default function Home() {
 
       {/* FLASH SALES SECTION */}
       {flashSaleProducts.length > 0 && (
-        <section className="py-16 px-6 bg-gradient-to-br from-red-600 to-orange-600">
+        <section className="py-14 sm:py-16 px-4 sm:px-6 bg-gradient-to-br from-red-600 to-orange-600">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <Sparkles className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-4xl font-bold text-white mb-1">Flash Sales</h2>
-                  <p className="text-white/90 text-lg">Limited time offers - Don't miss out!</p>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">Flash Sales</h2>
+                  <p className="text-white/90 text-base sm:text-lg">Limited time offers - Don't miss out!</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 px-4 md:px-6 py-3 bg-white/20 backdrop-blur-sm rounded-xl">
+              <div className="flex items-center gap-3 px-4 md:px-6 py-3 bg-white/20 backdrop-blur-sm rounded-xl w-full sm:w-auto">
                 <Clock className="w-5 h-5 text-white" />
                 <span className="text-white font-semibold">Ends Soon</span>
                 {flashCountdown && (
@@ -260,7 +260,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               {flashSaleProducts.slice(0, 4).map((product, index) => (
                 <div
                   key={product.id}
@@ -276,7 +276,7 @@ export default function Home() {
               <div className="text-center mt-10">
                 <Link
                   to="/category/gifts"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-white text-red-600 rounded-lg font-bold hover:scale-105 transition-all shadow-xl"
+                  className="inline-flex items-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-white text-red-600 rounded-lg font-bold hover:scale-105 transition-all shadow-xl"
                 >
                   View All Flash Sales
                   <ArrowRight className="w-5 h-5" />
@@ -288,7 +288,7 @@ export default function Home() {
       )}
 
       {/* FEATURED PRODUCTS SECTION */}
-      <section className="py-20 px-6 bg-gray-50">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-16">
@@ -297,10 +297,10 @@ export default function Home() {
               <span className="text-blue-900 font-semibold text-sm">Featured Collection</span>
             </div>
             
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               {search ? "Search Results" : "Premium Products"}
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
               {search 
                 ? "Find exactly what you're looking for" 
                 : "Carefully curated selection of our finest offerings"}
@@ -366,7 +366,7 @@ export default function Home() {
           {/* Products Grid */}
           {!loading && visibleProducts.length > 0 && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {visibleProducts.map((product, index) => (
                   <div
                     key={product.id}
@@ -383,7 +383,7 @@ export default function Home() {
                 <div className="text-center mt-16">
                   <Link
                     to="/category/gifts"
-                    className="inline-flex items-center gap-3 px-10 py-5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-bold text-lg transition-all shadow-xl hover:scale-105"
+                    className="inline-flex items-center gap-3 px-7 py-4 sm:px-10 sm:py-5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-bold text-base sm:text-lg transition-all shadow-xl hover:scale-105"
                   >
                     View All Products
                     <ArrowRight className="w-6 h-6" />
@@ -396,7 +396,7 @@ export default function Home() {
       </section>
 
       {/* WHY CHOOSE US SECTION */}
-      <section id="why-choose-us" className="py-20 px-6 bg-white">
+      <section id="why-choose-us" className="py-16 sm:py-20 px-4 sm:px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-16">
@@ -405,10 +405,10 @@ export default function Home() {
               <span className="text-blue-900 font-semibold text-sm">Our Commitment</span>
             </div>
             
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Why Choose Us
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
               Experience the difference of working with a trusted partner
             </p>
           </div>
@@ -462,7 +462,7 @@ export default function Home() {
           </div>
 
           {/* Stats Section */}
-          <div className="grid md:grid-cols-3 gap-8 mt-20 pt-16 border-t border-gray-200">
+          <div className="grid md:grid-cols-3 gap-8 mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-gray-200">
             {[
               { number: "5000+", label: "Happy Customers", Icon: Users },
               { number: "1000+", label: "Products Delivered", Icon: Package },
@@ -474,8 +474,8 @@ export default function Home() {
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
                     <IconComponent className="w-8 h-8 text-blue-600" />
                   </div>
-                  <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">{stat.number}</h3>
-                  <p className="text-gray-600 text-lg">{stat.label}</p>
+                  <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2">{stat.number}</h3>
+                  <p className="text-gray-600 text-base sm:text-lg">{stat.label}</p>
                 </div>
               );
             })}
@@ -484,25 +484,25 @@ export default function Home() {
       </section>
 
       {/* CTA SECTION */}
-      <section className="py-24 px-6 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700">
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-8">
             <TrendingUp className="w-4 h-4 text-white" />
             <span className="text-white font-semibold text-sm">Get Started Today</span>
           </div>
 
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Ready to Experience Premium Quality?
           </h2>
           
-          <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-blue-100 mb-10 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
             Join thousands of satisfied customers who trust us for their needs
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               to="/category/gifts"
-              className="group inline-flex items-center gap-3 px-10 py-5 bg-white text-blue-600 rounded-lg font-bold text-lg hover:scale-105 transition-all shadow-2xl"
+              className="group inline-flex items-center gap-3 px-7 py-4 sm:px-10 sm:py-5 bg-white text-blue-600 rounded-lg font-bold text-base sm:text-lg hover:scale-105 transition-all shadow-2xl"
             >
               Browse Products
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
@@ -512,7 +512,7 @@ export default function Home() {
               href="/Contact"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-10 py-5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 rounded-lg font-bold text-lg transition-all"
+              className="inline-flex items-center gap-3 px-7 py-4 sm:px-10 sm:py-5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 rounded-lg font-bold text-base sm:text-lg transition-all"
             >
               <MessageCircle className="w-6 h-6" />
               Contact Us
@@ -520,7 +520,7 @@ export default function Home() {
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-8 mt-16 pt-12 border-t border-white/20">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-12 sm:mt-16 pt-10 sm:pt-12 border-t border-white/20">
             <div className="flex items-center gap-3 text-white/90">
               <Check className="w-5 h-5" />
               <span className="font-medium">Secure Checkout</span>

@@ -7,7 +7,7 @@ export default function About() {
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 px-6 overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
+      <section className="relative py-16 sm:py-20 md:py-32 px-4 sm:px-6 overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse animation-delay-2000" />
@@ -19,29 +19,29 @@ export default function About() {
             <span className="text-white font-semibold text-sm">About SmartNest Solutions</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
             Transforming Spaces,
             <br />
             Creating Memories
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
             We're on a mission to bring joy, style, and functionality to every home and business through premium products and personalized solutions
           </p>
         </div>
       </section>
 
       {/* Our Story Section */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block mb-4 px-4 py-2 bg-purple-100 text-purple-700 rounded-full font-semibold text-sm">
                 Our Story
               </div>
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-6">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 mb-6">
                 Built on Passion & Excellence
               </h2>
-              <div className="space-y-4 text-gray-600 text-lg leading-relaxed">
+              <div className="space-y-4 text-gray-600 text-base sm:text-lg leading-relaxed">
                 <p>
                   SmartNest Solutions began with a simple vision: to make quality home essentials, 
                   thoughtful gifts, and custom branding solutions accessible to everyone in Kenya.
@@ -88,36 +88,36 @@ export default function About() {
       </section>
 
       {/* Mission & Vision Section */}
-      <section className="py-20 px-6 bg-gray-50">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 mb-4">
               Our Mission & Vision
             </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
               Guided by purpose, driven by passion
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-10 rounded-3xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all">
+            <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all">
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6">
                 <Target className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Our Mission</h3>
-              <p className="text-gray-600 text-lg leading-relaxed">
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
                 To provide premium quality products and exceptional customer service that transforms 
                 houses into homes and helps businesses stand out through custom branding solutions. 
                 We strive to make every customer interaction meaningful and every product purchase valuable.
               </p>
             </div>
 
-            <div className="bg-white p-10 rounded-3xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all">
+            <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-6">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Our Vision</h3>
-              <p className="text-gray-600 text-lg leading-relaxed">
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
                 To become Kenya's most trusted destination for home essentials, gifts, and custom branding, 
                 known for our commitment to quality, innovation, and customer satisfaction. We envision a 
                 future where every Kenyan home and business reflects style, personality, and excellence.
@@ -128,16 +128,16 @@ export default function About() {
       </section>
 
       {/* Core Values Section */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-block mb-4 px-4 py-2 bg-purple-100 text-purple-700 rounded-full font-semibold text-sm">
               What We Stand For
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 mb-4">
               Our Core Values
             </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
               The principles that guide everything we do
             </p>
           </div>
@@ -200,13 +200,13 @@ export default function About() {
       </section>
 
       {/* What We Offer Section */}
-      <section className="py-20 px-6 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-4">
               What We Offer
             </h2>
-            <p className="text-purple-200 text-lg max-w-2xl mx-auto">
+            <p className="text-purple-200 text-base sm:text-lg max-w-2xl mx-auto">
               Three main categories to serve all your needs
             </p>
           </div>

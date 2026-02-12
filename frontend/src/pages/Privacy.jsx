@@ -8,7 +8,7 @@ export default function Privacy() {
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-28 px-6 overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700">
+      <section className="relative py-16 sm:py-20 md:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-cyan-400 rounded-full filter blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400 rounded-full filter blur-3xl animate-pulse animation-delay-2000" />
@@ -20,10 +20,10 @@ export default function Privacy() {
             <span className="text-white font-semibold text-sm">Your Privacy Matters</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
             Privacy Policy
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
             We're committed to protecting your personal information and your right to privacy
           </p>
           <p className="text-white/70 mt-4">Last Updated: February 2026</p>
@@ -31,7 +31,7 @@ export default function Privacy() {
       </section>
 
       {/* Quick Stats */}
-      <section className="py-12 px-6 bg-white border-b border-gray-200">
+      <section className="py-10 sm:py-12 px-4 sm:px-6 bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-6">
             {[
@@ -57,7 +57,7 @@ export default function Privacy() {
 
       {/* Quick Navigation */}
       <section className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[
               { name: "Overview", id: "overview" },
@@ -82,9 +82,9 @@ export default function Privacy() {
       </section>
 
       {/* Main Content */}
-      <section className="py-16 px-6">
+      <section className="py-14 sm:py-16 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 md:p-12">
+          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 sm:p-8 md:p-12">
             
             {/* Overview */}
             <div id="overview" className="mb-16 scroll-mt-24">
@@ -92,9 +92,9 @@ export default function Privacy() {
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
                   <FileText className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-gray-900">1. Overview</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900">1. Overview</h2>
               </div>
-              <div className="space-y-4 text-gray-700 leading-relaxed">
+              <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed">
                 <p>
                   At SmartNest Solutions, we take your privacy seriously. This Privacy Policy explains how we 
                   collect, use, disclose, and safeguard your information when you visit our website or use our services.

@@ -4,7 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from flask import current_app
 
 
-def send_email_smtp(to_email, subject, html_body):
+def send_email_smtp(to_email, subject, html_body, reply_to=None):
     smtp_server = current_app.config.get("SMTP_SERVER")
     smtp_port = current_app.config.get("SMTP_PORT")
     smtp_email = current_app.config.get("SMTP_EMAIL")
@@ -17,6 +17,8 @@ def send_email_smtp(to_email, subject, html_body):
     msg["Subject"] = subject
     msg["From"] = smtp_email
     msg["To"] = to_email
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg.attach(MIMEText(html_body, "html"))
 
     with smtplib.SMTP(smtp_server, smtp_port) as server:

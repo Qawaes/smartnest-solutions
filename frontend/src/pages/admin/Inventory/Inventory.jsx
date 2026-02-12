@@ -155,17 +155,55 @@ export default function Inventory() {
         body: JSON.stringify(payload),
       });
 
+      let updatedProduct = null;
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to update product");
+        try {
+          const err = await res.json();
+          throw new Error(err.error || "Failed to update product");
+        } catch (e) {
+          throw e;
+        }
+      } else {
+        try {
+          updatedProduct = await res.json();
+        } catch {
+          updatedProduct = null;
+        }
       }
 
-      await fetchData();
+      const normalizedUpdated =
+        updatedProduct?.product && updatedProduct.product.id
+          ? updatedProduct.product
+          : updatedProduct && updatedProduct.id
+          ? updatedProduct
+          : null;
+
+      const optimisticUpdate = {
+        ...product,
+        stock_quantity: stockQuantity,
+        discount_percent: discountPercent,
+        flash_sale_percent: flashSalePercent,
+        flash_sale_start,
+        flash_sale_end,
+        flash_sale_active:
+          flashSalePercent > 0 &&
+          flash_sale_end &&
+          new Date(flash_sale_end).getTime() > Date.now(),
+      };
+
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id ? { ...p, ...(normalizedUpdated || optimisticUpdate) } : p
+        )
+      );
+
+      // Clear edits for this product
       setEdits((prev) => {
         const copy = { ...prev };
         delete copy[product.id];
         return copy;
       });
+      
       setEditingProduct(null);
     } catch (error) {
       console.error("Inventory save error:", error);
@@ -175,36 +213,54 @@ export default function Inventory() {
     }
   };
 
+  const isFlashActive = (product) => {
+    if (product.flash_sale_active) return true;
+    if (!product.flash_sale_end) return false;
+    const percent = Number(product.flash_sale_percent || 0);
+    if (percent <= 0) return false;
+    return new Date(product.flash_sale_end).getTime() > Date.now();
+  };
+
   const EditModal = ({ product }) => {
     if (!product) return null;
 
-    const stockQty = Number(
-      getEditValue(product.id, "stock_quantity", product.stock_quantity || 0)
+    const stockQty = getEditValue(
+      product.id,
+      "stock_quantity",
+      product.stock_quantity ?? ""
     );
-    const discountPercent = Number(
-      getEditValue(product.id, "discount_percent", product.discount_percent || 0)
+    const discountPercent = getEditValue(
+      product.id,
+      "discount_percent",
+      product.discount_percent ?? ""
     );
-    const flashSalePercent = Number(
-      getEditValue(product.id, "flash_sale_percent", product.flash_sale_percent || 0)
+    const flashSalePercent = getEditValue(
+      product.id,
+      "flash_sale_percent",
+      product.flash_sale_percent ?? ""
     );
+    const stockQtyNumber = Number(stockQty || 0);
+    const discountPercentNumber = Number(discountPercent || 0);
+    const flashSalePercentNumber = Number(flashSalePercent || 0);
     const remaining = getRemainingDuration(product);
     const flashDurationValue = getEditValue(
       product.id,
       "flash_duration_value",
       remaining.value
     );
+    const flashDurationValueNumber = Number(flashDurationValue || 0);
     const flashDurationUnit = getEditValue(
       product.id,
       "flash_duration_unit",
       remaining.unit
     );
     const discountedPrice =
-      discountPercent > 0
-        ? Number(product.price) * (1 - discountPercent / 100)
+      discountPercentNumber > 0
+        ? Number(product.price) * (1 - discountPercentNumber / 100)
         : Number(product.price);
     const flashPrice =
-      flashSalePercent > 0
-        ? Number(product.price) * (1 - flashSalePercent / 100)
+      flashSalePercentNumber > 0
+        ? Number(product.price) * (1 - flashSalePercentNumber / 100)
         : discountedPrice;
 
     return (
@@ -264,8 +320,8 @@ export default function Inventory() {
                 placeholder="Enter stock quantity"
               />
               <p className="text-sm text-gray-500 mt-2">
-                Current status: {stockQty > 0 ? (
-                  <span className="text-green-600 font-medium">In Stock ({stockQty} units)</span>
+                Current status: {stockQtyNumber > 0 ? (
+                  <span className="text-green-600 font-medium">In Stock ({stockQtyNumber} units)</span>
                 ) : (
                   <span className="text-red-600 font-medium">Out of Stock</span>
                 )}
@@ -286,11 +342,11 @@ export default function Inventory() {
                 className="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="Enter discount percentage"
               />
-              {discountPercent > 0 && (
+              {discountPercentNumber > 0 && (
                 <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">
                     Discounted Price: <span className="font-bold">KES {discountedPrice.toLocaleString()}</span>
-                    <span className="text-blue-600 ml-2">({discountPercent}% off)</span>
+                    <span className="text-blue-600 ml-2">({discountPercentNumber}% off)</span>
                   </p>
                 </div>
               )}
@@ -317,11 +373,11 @@ export default function Inventory() {
                     className="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder="Enter flash sale percentage"
                   />
-                  {flashSalePercent > 0 && (
+                  {flashSalePercentNumber > 0 && (
                     <div className="mt-2 p-3 bg-orange-50 rounded-lg">
                       <p className="text-sm text-orange-700">
                         Flash Sale Price: <span className="font-bold">KES {flashPrice.toLocaleString()}</span>
-                        <span className="text-orange-600 ml-2">({flashSalePercent}% off)</span>
+                        <span className="text-orange-600 ml-2">({flashSalePercentNumber}% off)</span>
                       </p>
                     </div>
                   )}
@@ -355,7 +411,7 @@ export default function Inventory() {
                       </select>
                     </div>
                   </div>
-                  {flashDurationValue > 0 && flashSalePercent > 0 && (
+                  {flashDurationValueNumber > 0 && flashSalePercentNumber > 0 && (
                     <p className="text-sm text-gray-600 mt-2">
                       Flash sale will run for {flashDurationValue} {flashDurationUnit}
                     </p>
@@ -406,15 +462,9 @@ export default function Inventory() {
   };
 
   const ProductCard = ({ product }) => {
-    const stockQty = Number(
-      getEditValue(product.id, "stock_quantity", product.stock_quantity || 0)
-    );
-    const discountPercent = Number(
-      getEditValue(product.id, "discount_percent", product.discount_percent || 0)
-    );
-    const flashSalePercent = Number(
-      getEditValue(product.id, "flash_sale_percent", product.flash_sale_percent || 0)
-    );
+    const stockQty = Number(product.stock_quantity || 0);
+    const discountPercent = Number(product.discount_percent || 0);
+    const flashSalePercent = Number(product.flash_sale_percent || 0);
     const discountedPrice =
       discountPercent > 0
         ? Number(product.price) * (1 - discountPercent / 100)
@@ -484,7 +534,7 @@ export default function Inventory() {
           </div>
 
           {/* Flash Sale Info */}
-          {product.flash_sale_active && (
+          {isFlashActive(product) && (
             <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
               <Zap size={10} className="text-orange-600" />
               Ends: {new Date(product.flash_sale_end).toLocaleDateString()}
@@ -507,7 +557,7 @@ export default function Inventory() {
     total: products.length,
     inStock: products.filter(p => p.stock_quantity > 0).length,
     outOfStock: products.filter(p => p.stock_quantity === 0).length,
-    flashActive: products.filter(p => p.flash_sale_active).length,
+    flashActive: products.filter((p) => isFlashActive(p)).length,
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "../../components/products/ProductCard";
-import { fetchProductsByCategory } from "../../services/api";
+import { fetchProductsByCategory, fetchProductsByCategoryPaged } from "../../services/api";
 import { useSearch } from "../../context/SearchContext";
 
 export default function Category() {
@@ -13,20 +13,52 @@ export default function Category() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 16;
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    fetchProductsByCategory(slug)
-      .then((data) => setProducts(Array.isArray(data) ? data : []))
-      .catch(() => setError("Failed to load products"))
-      .finally(() => setLoading(false));
-  }, [slug]);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
 
   useEffect(() => {
     setPage(1);
   }, [slug, search]);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError("");
+
+    const load = async () => {
+      try {
+        if (search) {
+          const data = await fetchProductsByCategory(slug);
+          if (!isMounted) return;
+          setProducts(Array.isArray(data) ? data : []);
+          setServerTotalPages(1);
+        } else {
+          const data = await fetchProductsByCategoryPaged(slug, { page, perPage: pageSize });
+          if (!isMounted) return;
+          if (Array.isArray(data)) {
+            setProducts(data);
+            setServerTotalPages(1);
+          } else {
+            setProducts(Array.isArray(data.items) ? data.items : []);
+            const totalPages = data.total_pages || 1;
+            setServerTotalPages(totalPages);
+            if (page > totalPages) {
+              setPage(totalPages);
+            }
+          }
+        }
+      } catch {
+        if (!isMounted) return;
+        setError("Failed to load products");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, page, search]);
 
   const titleMap = {
     gifts: "Gifts",
@@ -34,18 +66,26 @@ export default function Category() {
     "custom-branding": "Custom Branding",
   };
 
-  const filteredProducts = products.filter((p) =>
-    [p.name, p.description, p.category]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const isSearchActive = search.trim().length > 0;
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const filteredProducts = isSearchActive
+    ? products.filter((p) =>
+        [p.name, p.description, p.category]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      )
+    : products;
+
+  const totalPages = isSearchActive
+    ? Math.max(1, Math.ceil(filteredProducts.length / pageSize))
+    : Math.max(1, serverTotalPages);
   const safePage = Math.min(page, totalPages);
   const startIndex = (safePage - 1) * pageSize;
-  const visibleProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
+  const visibleProducts = isSearchActive
+    ? filteredProducts.slice(startIndex, startIndex + pageSize)
+    : filteredProducts;
 
   return (
     <div className="space-y-8">
@@ -61,7 +101,7 @@ export default function Category() {
         <p className="text-center text-red-500">{error}</p>
       )}
 
-      {!loading && !error && products.length === 0 && (
+      {!loading && !error && filteredProducts.length === 0 && (
         <p className="text-center text-gray-500">
           No products found in this category
         </p>
@@ -75,7 +115,7 @@ export default function Category() {
         </div>
       )}
 
-      {!loading && !error && filteredProducts.length > pageSize && (
+      {!loading && !error && totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}

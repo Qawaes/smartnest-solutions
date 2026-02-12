@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime
+import math
 from app.models.product import Product
 from app.models.category import Category
 from app.models.product_image import ProductImage
@@ -25,48 +26,91 @@ def _require_admin():
         return jsonify({"error": "Admin access required"}), 403
     return None
 
+def _parse_pagination():
+    page = request.args.get("page")
+    per_page = request.args.get("per_page")
+
+    if page is None and per_page is None:
+        return None, None
+
+    try:
+        page = int(page) if page else 1
+        per_page = int(per_page) if per_page else 16
+    except ValueError:
+        return None, (jsonify({"error": "page and per_page must be integers"}), 400)
+
+    if page < 1 or per_page < 1:
+        return None, (jsonify({"error": "page and per_page must be >= 1"}), 400)
+
+    per_page = min(per_page, 100)
+    return (page, per_page), None
+
+def _serialize_product(p, include_stock=False):
+    primary_image = None
+    if p.images:
+        primary = next((img for img in p.images if img.is_primary), None)
+        primary_image = primary.image_url if primary else p.images[0].image_url
+
+    data = {
+        "id": p.id,
+        "name": p.name,
+        "description": p.description,
+        "price": float(p.price),
+        "category": p.category.slug,
+        "is_branding": p.is_branding,
+        "discount_percent": p.discount_percent,
+        "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
+        "effective_price": float(p.get_effective_price()),
+        "flash_sale_active": p.is_flash_sale_active(),
+        "flash_sale_percent": p.flash_sale_percent,
+        "flash_sale_start": p.flash_sale_start.isoformat() if p.flash_sale_start else None,
+        "flash_sale_end": p.flash_sale_end.isoformat() if p.flash_sale_end else None,
+        "rating_avg": round(p.rating_sum / p.rating_count, 2) if p.rating_count > 0 else 0,
+        "rating_count": p.rating_count,
+        "in_stock": p.stock_quantity > 0,
+        "image": primary_image,
+        "images": [img.to_dict() for img in p.images],
+    }
+
+    if include_stock:
+        data["stock_quantity"] = p.stock_quantity
+
+    return data
+
+def _paginate_query(query, page, per_page):
+    total = query.count()
+    items = (
+        query
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    total_pages = max(1, math.ceil(total / per_page)) if total else 1
+    return items, total, total_pages
+
 # GET (ALL or BY CATEGORY)
 @product_bp.route("", methods=["GET", "OPTIONS"])
 def get_products():
-    products = Product.query.all()
+    pagination, error = _parse_pagination()
+    if error:
+        return error
 
-    result = []
+    query = Product.query.order_by(Product.id.asc())
 
-    for p in products:
-        primary_image = None
-
-        if p.images:
-            primary = next(
-                (img for img in p.images if img.is_primary),
-                None
-            )
-            primary_image = (
-                primary.image_url if primary else p.images[0].image_url
-            )
-
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "price": float(p.price),
-            "category": p.category.slug,
-            "is_branding": p.is_branding,
-            "discount_percent": p.discount_percent,
-            "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
-            "effective_price": float(p.get_effective_price()),
-            "flash_sale_active": p.is_flash_sale_active(),
-            "flash_sale_percent": p.flash_sale_percent,
-            "flash_sale_start": p.flash_sale_start.isoformat() if p.flash_sale_start else None,
-            "flash_sale_end": p.flash_sale_end.isoformat() if p.flash_sale_end else None,
-            "rating_avg": round(p.rating_sum / p.rating_count, 2) if p.rating_count > 0 else 0,
-            "rating_count": p.rating_count,
-            "in_stock": p.stock_quantity > 0,
-
-          
-            "image": primary_image,
-            "images": [img.to_dict() for img in p.images],
+    if pagination:
+        page, per_page = pagination
+        items, total, total_pages = _paginate_query(query, page, per_page)
+        result = [_serialize_product(p) for p in items]
+        return jsonify({
+            "items": result,
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
         })
 
+    products = query.all()
+    result = [_serialize_product(p) for p in products]
     return jsonify(result)
 
 @product_bp.route("/admin", methods=["GET"])
@@ -76,34 +120,26 @@ def get_products_admin():
     if auth_error:
         return auth_error
 
-    products = Product.query.all()
-    result = []
-    for p in products:
-        primary_image = None
-        if p.images:
-            primary = next((img for img in p.images if img.is_primary), None)
-            primary_image = primary.image_url if primary else p.images[0].image_url
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "price": float(p.price),
-            "category": p.category.slug,
-            "is_branding": p.is_branding,
-            "stock_quantity": p.stock_quantity,
-            "discount_percent": p.discount_percent,
-            "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
-            "effective_price": float(p.get_effective_price()),
-            "flash_sale_active": p.is_flash_sale_active(),
-            "flash_sale_percent": p.flash_sale_percent,
-            "flash_sale_start": p.flash_sale_start.isoformat() if p.flash_sale_start else None,
-            "flash_sale_end": p.flash_sale_end.isoformat() if p.flash_sale_end else None,
-            "rating_avg": round(p.rating_sum / p.rating_count, 2) if p.rating_count > 0 else 0,
-            "rating_count": p.rating_count,
-            "in_stock": p.stock_quantity > 0,
-            "image": primary_image,
-            "images": [img.to_dict() for img in p.images],
+    pagination, error = _parse_pagination()
+    if error:
+        return error
+
+    query = Product.query.order_by(Product.id.asc())
+
+    if pagination:
+        page, per_page = pagination
+        items, total, total_pages = _paginate_query(query, page, per_page)
+        result = [_serialize_product(p, include_stock=True) for p in items]
+        return jsonify({
+            "items": result,
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
         })
+
+    products = query.all()
+    result = [_serialize_product(p, include_stock=True) for p in products]
     return jsonify(result)
 
 
@@ -214,48 +250,31 @@ def delete_product(id):
 # GET PRODUCTS BY CATEGORY SLUG
 @product_bp.route("/category/<slug>", methods=["GET"])
 def get_products_by_category(slug):
-    products = (
+    pagination, error = _parse_pagination()
+    if error:
+        return error
+
+    query = (
         Product.query
         .join(Category)
         .filter(Category.slug == slug)
-        .all()
+        .order_by(Product.id.asc())
     )
 
-    result = []
-
-    for p in products:
-        primary_image = None
-
-        if p.images:
-            primary = next(
-                (img for img in p.images if img.is_primary),
-                None
-            )
-            primary_image = (
-                primary.image_url if primary else p.images[0].image_url
-            )
-
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "price": float(p.price),
-            "category": p.category.slug,
-            "is_branding": p.is_branding,
-            "discount_percent": p.discount_percent,
-            "discounted_price": float(p.get_discounted_price()) if p.discount_percent else None,
-            "effective_price": float(p.get_effective_price()),
-            "flash_sale_active": p.is_flash_sale_active(),
-            "flash_sale_percent": p.flash_sale_percent,
-            "flash_sale_start": p.flash_sale_start.isoformat() if p.flash_sale_start else None,
-            "flash_sale_end": p.flash_sale_end.isoformat() if p.flash_sale_end else None,
-            "rating_avg": round(p.rating_sum / p.rating_count, 2) if p.rating_count > 0 else 0,
-            "rating_count": p.rating_count,
-            "in_stock": p.stock_quantity > 0,
-            "image": primary_image,
-            "images": [img.to_dict() for img in p.images],
+    if pagination:
+        page, per_page = pagination
+        items, total, total_pages = _paginate_query(query, page, per_page)
+        result = [_serialize_product(p) for p in items]
+        return jsonify({
+            "items": result,
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
         })
 
+    products = query.all()
+    result = [_serialize_product(p) for p in products]
     return jsonify(result)
 
 
