@@ -436,7 +436,7 @@ export default function Contact() {
                   Tom Mboya Street, Nairobi CBD, Kenya
                 </p>
                 <a
-                  href="https://maps.google.com"
+                  href="https://maps.app.goo.gl/t9NvJ2qKnwC2DszF9?g_st=atm"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block mt-4 px-6 py-3 bg-purple-600 text-white rounded-full font-semibold hover:bg-purple-700 transition-colors"
