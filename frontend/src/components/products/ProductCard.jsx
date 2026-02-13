@@ -43,6 +43,7 @@ export default function ProductCard({ product }) {
         price: displayPrice,
         qty: 1,
         is_branding: product.is_branding,
+        category: product.category?.name || product.category?.slug || product.category || null,
         in_stock: inStock,
       });
     }

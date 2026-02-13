@@ -33,12 +33,10 @@ def send_order_whatsapp_notification(order, items, delivery_fee):
     owner_number = os.getenv("WHATSAPP_OWNER_NUMBER", "+254728840848")
 
     if not token or not phone_number_id:
-        print("WhatsApp notification skipped: missing WHATSAPP_CLOUD_API_TOKEN or WHATSAPP_PHONE_NUMBER_ID")
         return
 
     to_number = _normalize_msisdn(owner_number)
     if not to_number:
-        print("WhatsApp notification skipped: missing owner number")
         return
 
     url = f"https://graph.facebook.com/v19.0/{phone_number_id}/messages"

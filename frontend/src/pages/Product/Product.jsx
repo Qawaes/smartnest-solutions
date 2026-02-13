@@ -161,6 +161,7 @@ export default function Product() {
         price: effectivePrice,
         qty: quantity,
         is_branding: product.is_branding,
+        category: product.category?.name || product.category?.slug || product.category || null,
         in_stock: inStock,
       });
     }

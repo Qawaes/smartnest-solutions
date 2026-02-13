@@ -70,6 +70,7 @@ export function CartProvider({ children }) {
             ...item,
             price: Number(price),
             in_stock: latest.in_stock !== false,
+            category: latest.category?.name || latest.category?.slug || latest.category || null,
           };
         })
         .filter(Boolean);

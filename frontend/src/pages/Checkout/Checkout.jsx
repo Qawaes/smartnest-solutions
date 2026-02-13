@@ -77,6 +77,7 @@ const [branding, setBranding] = useState({
 
   try {
     setLoading(true);
+    const waWindow = window.open("", "_blank");
 
     const orderPayload = {
       customer: billing,
@@ -99,22 +100,6 @@ const [branding, setBranding] = useState({
       sessionStorage.setItem(`order_token_${newOrderId}`, orderToken);
     }
     
-    // 🆕 Upload logo image if provided
-    if (hasBrandingItems && branding.logoFile && newOrderId) {
-      try {
-        const formData = new FormData();
-        formData.append('logo', branding.logoFile);
-        
-        await fetch(`${API_BASE_URL}/api/orders/${newOrderId}/branding/logo`, {
-          method: 'POST',
-          body: formData
-        });
-      } catch (logoErr) {
-        console.error('Logo upload failed:', logoErr);
-        
-      }
-    }
-
     const itemsSummary = cart
       .map((item) => `${item.qty} x ${item.name} @ KES ${item.price.toLocaleString()}`)
       .join("\n");
@@ -134,8 +119,24 @@ const [branding, setBranding] = useState({
     ].join("\n");
 
     clearCart();
-    const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(waLink, "_blank", "noopener,noreferrer");
+    const waLink = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
+    if (waWindow) {
+      waWindow.location = waLink;
+    } else {
+      window.location.href = waLink;
+    }
+    
+    
+    if (hasBrandingItems && branding.logoFile && newOrderId) {
+      const formData = new FormData();
+      formData.append('logo', branding.logoFile);
+      fetch(`${API_BASE_URL}/api/orders/${newOrderId}/branding/logo`, {
+        method: 'POST',
+        body: formData
+      }).catch((logoErr) => {
+        console.error('Logo upload failed:', logoErr);
+      });
+    }
     navigate("/", { replace: true });
   } catch (err) {
     console.error("Order creation error:", err);
@@ -329,19 +330,7 @@ const [branding, setBranding] = useState({
                           )}
 
                           {/* OR text description */}
-                          <p className="text-sm text-gray-600 text-center font-semibold">
-                            OR
-                          </p>
-
-                          <input
-                            type="text"
-                            placeholder="Describe your logo (e.g., URL or details)"
-                            value={branding.logo}
-                            onChange={(e) =>
-                              setBranding({ ...branding, logo: e.target.value })
-                            }
-                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-purple-600 focus:ring focus:ring-purple-200 transition-all text-gray-900 font-medium"
-                          />
+                         
                         </div>
                       </div>
 

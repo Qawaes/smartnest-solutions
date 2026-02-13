@@ -7,9 +7,7 @@ from app.models.branding import BrandingDetail
 from app.models.product import Product
 from app.models.payment import Payment
 from datetime import datetime
-from werkzeug.utils import secure_filename
 import cloudinary.uploader
-import os
 import secrets
 from app.utils.email import send_email_smtp, build_order_confirmation_html
 from app.services.whatsapp import send_order_whatsapp_notification
@@ -378,15 +376,15 @@ def upload_branding_logo(order_id):
         return jsonify({"error": "Invalid file type. Allowed: png, jpg, jpeg, gif, svg"}), 400
     
     try:
-        # Upload to Cloudinary (you're already using it for products)
+        # Upload to Cloudinary
         result = cloudinary.uploader.upload(
             file,
             folder="smartnest/branding_logos",
             allowed_formats=['png', 'jpg', 'jpeg', 'gif', 'svg']
         )
-        
+
         logo_url = result['secure_url']
-        
+
         # Update or create branding detail
         if order.branding:
             order.branding.logo = logo_url
@@ -396,14 +394,14 @@ def upload_branding_logo(order_id):
                 logo=logo_url
             )
             db.session.add(branding)
-        
+
         db.session.commit()
-        
+
         return jsonify({
             "message": "Logo uploaded successfully",
             "logo_url": logo_url
         }), 200
-    
+
     except Exception as e:
         db.session.rollback()
         print(f"Error uploading logo: {str(e)}")
