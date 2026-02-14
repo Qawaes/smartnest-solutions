@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 from pathlib import Path
+from flask_migrate import upgrade
+
 
 # Always load backend/.env explicitly (works no matter where flask is run from)
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -152,5 +154,13 @@ def create_app():
             if request.is_secure or os.getenv("FORCE_HTTPS"):
                 response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
+       # 🚨 TEMPORARY: auto-run migrations on startup (Render Free workaround)
+    with app.app_context():
+        try:
+            upgrade()
+            app.logger.info("Database migrations applied successfully")
+        except Exception as e:
+            app.logger.warning(f"Migration skipped or failed: {e}")
+
 
     return app
