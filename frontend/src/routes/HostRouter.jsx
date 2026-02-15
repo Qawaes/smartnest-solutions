@@ -4,23 +4,38 @@ export default function HostRouter({ children }) {
   const location = useLocation();
 
   const host = window.location.hostname;
-  const parts = host.split(".");
-  const subdomain = parts.length > 2 ? parts[0] : null;
-
+  
+  const isAdminSubdomain = host.startsWith("admin.");
+  
   const isAdminPath = location.pathname.startsWith("/admin");
 
-  // If someone hits /admin on the main domain, send them to admin subdomain
-  if (isAdminPath && subdomain !== "admin") {
-    const target = `${window.location.protocol}//admin.${parts.slice(-2).join(".")}${location.pathname}${window.location.search}${window.location.hash}`;
+ 
+  if (isAdminPath && !isAdminSubdomain) {
+   
+    const adminHost = host.includes("localhost") 
+      ? "admin.localhost:5173" 
+      : `admin.${host.replace(/^(www\.)?/, "")}`;
+    
+    const target = `${window.location.protocol}//${adminHost}${location.pathname}${window.location.search}${window.location.hash}`;
     window.location.replace(target);
     return null;
   }
 
-  // Handle admin subdomain default routing
-  if (subdomain === "admin") {
-    // If user hits root on admin subdomain
+  if (isAdminSubdomain) {
+   
     if (location.pathname === "/") {
       return <Navigate to="/admin/login" replace />;
+    }
+    
+    
+    if (!isAdminPath) {
+      return <Navigate to={`/admin${location.pathname}`} replace />;
+    }
+  } else {
+    // On main domain, block direct /admin access (already handled above)
+    // This is a safety net
+    if (isAdminPath) {
+      return <Navigate to="/" replace />;
     }
   }
 
