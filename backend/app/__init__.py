@@ -50,24 +50,37 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['SESSION_COOKIE_SECURE'] = True
-
-    # Enable CORS early (restrict origins)
+# Enable CORS early (restrict origins)
     # Allow multiple origins via comma-separated CORS_ORIGINS,
     # plus APP_URL and ADMIN_APP_URL as single values.
     origins_from_env = os.getenv("CORS_ORIGINS", "")
     allowed_origins = []
     if origins_from_env:
         allowed_origins.extend([o.strip() for o in origins_from_env.split(",") if o.strip()])
+    
     allowed_origins.extend([
         app.config.get("APP_URL"),
         app.config.get("ADMIN_APP_URL"),
     ])
+    
+    # ✅ CRITICAL FIX - Hardcode Vercel URL
+    allowed_origins.extend([
+        "https://smartnest-solutions.vercel.app",
+        "https://*.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ])
+    
     allowed_origins = [o for o in allowed_origins if o]
+    
+    # ✅ FALLBACK - If still empty, allow Vercel
     if not allowed_origins:
-        if os.getenv("FLASK_ENV") == "development":
-            allowed_origins = ["http://localhost:3000"]
-        else:
-            raise RuntimeError("No CORS origins configured. Set APP_URL/ADMIN_APP_URL.")
+        allowed_origins = [
+            "https://smartnest-solutions.vercel.app",
+            "http://localhost:5173"
+        ]
+
+    print(f"🔥 DEBUG - Allowed CORS origins: {allowed_origins}")  # ✅ ADD THIS TO SEE IN LOGS
 
     CORS(
         app,
@@ -76,6 +89,7 @@ def create_app():
                 "origins": allowed_origins,
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization", "X-Order-Token"],
+                "supports_credentials": True,
             }
         },
     )
@@ -155,10 +169,6 @@ def create_app():
                 response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
-    # 🚨 TEMPORARY: RESET DATABASE SCHEMA (Render Free bootstrap)
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
-        app.logger.info("Database schema recreated from models")
+   
 
     return app
