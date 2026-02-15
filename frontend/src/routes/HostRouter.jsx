@@ -9,35 +9,21 @@ export default function HostRouter({ children }) {
   
   const isAdminPath = location.pathname.startsWith("/admin");
 
- 
-  if (isAdminPath && !isAdminSubdomain) {
-   
-    const adminHost = host.includes("localhost") 
-      ? "admin.localhost:5173" 
-      : `admin.${host.replace(/^(www\.)?/, "")}`;
-    
-    const target = `${window.location.protocol}//${adminHost}${location.pathname}${window.location.search}${window.location.hash}`;
-    window.location.replace(target);
-    return null;
-  }
-
+  // If on admin subdomain
   if (isAdminSubdomain) {
-   
+    // If user hits root on admin subdomain, redirect to /admin/login
     if (location.pathname === "/") {
       return <Navigate to="/admin/login" replace />;
     }
     
-    
+    // Ensure admin routes start with /admin
     if (!isAdminPath) {
       return <Navigate to={`/admin${location.pathname}`} replace />;
     }
-  } else {
-    // On main domain, block direct /admin access (already handled above)
-    // This is a safety net
-    if (isAdminPath) {
-      return <Navigate to="/" replace />;
-    }
   }
+
+  // ✅ ALLOW /admin paths on main domain (removed the blocking code)
+  // This allows accessing admin at: smartnest-solutions.vercel.app/admin/login
 
   return children;
 }
