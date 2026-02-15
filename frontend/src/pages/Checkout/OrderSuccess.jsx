@@ -27,7 +27,8 @@ export default function OrderSuccess() {
   const [countdown, setCountdown] = useState(60);
 
   const API_BASE_URL =
-    import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+    import.meta.env.VITE_API_URL ||
+    "https://smartnest-backend-3vi6.onrender.com";
 
   // 🚨 If no order ID, exit
   useEffect(() => {

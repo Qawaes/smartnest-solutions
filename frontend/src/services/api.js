@@ -1,15 +1,9 @@
 const getApiBase = () => {
-  const hostname = window.location.hostname;
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "https://smartnest-backend-3vi6.onrender.com";
 
-  if (import.meta.env.VITE_API_URL) {
-    return `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`;
-  }
-
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:5000/api';
-  }
-
-  return 'https://smartnest-backend-3vi6.onrender.com/api';
+  return `${API_URL.replace(/\/$/, "")}/api`;
 };
 
 export const API_BASE = getApiBase();

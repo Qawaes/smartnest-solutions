@@ -2,7 +2,10 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
-const API_URL = "http://admin.iano.tech:5000/api/admin/auth";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://smartnest-backend-3vi6.onrender.com";
+const ADMIN_AUTH_BASE = `${API_URL}/api/admin/auth`;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -28,7 +31,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/verify`, {
+      const response = await fetch(`${ADMIN_AUTH_BASE}/verify`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -49,7 +52,7 @@ export function AuthProvider({ children }) {
   };
 
   const requestOTP = async (email) => {
-    const response = await fetch(`${API_URL}/request-otp`, {
+    const response = await fetch(`${ADMIN_AUTH_BASE}/request-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -65,7 +68,7 @@ export function AuthProvider({ children }) {
   };
 
   const verifyOTP = async (email, otp) => {
-    const response = await fetch(`${API_URL}/verify-otp`, {
+    const response = await fetch(`${ADMIN_AUTH_BASE}/verify-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, otp }),
@@ -88,7 +91,7 @@ export function AuthProvider({ children }) {
     
     if (token) {
       try {
-        await fetch(`${API_URL}/logout`, {
+        await fetch(`${ADMIN_AUTH_BASE}/logout`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
