@@ -10,6 +10,7 @@ def send_email_smtp(to_email, subject, html_body, reply_to=None):
     smtp_email = current_app.config.get("SMTP_EMAIL")
     smtp_password = current_app.config.get("SMTP_PASSWORD")
     smtp_timeout = current_app.config.get("SMTP_TIMEOUT_SECONDS", 10)
+    logger = current_app.logger
 
     if not smtp_server or not smtp_port:
         raise RuntimeError("SMTP server not configured")
@@ -26,10 +27,21 @@ def send_email_smtp(to_email, subject, html_body, reply_to=None):
         msg["Reply-To"] = reply_to
     msg.attach(MIMEText(html_body, "html"))
 
-    with smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout) as server:
-        server.starttls()
-        server.login(smtp_email, smtp_password)
-        server.sendmail(smtp_email, [to_email], msg.as_string())
+    logger.info(
+        "SMTP connect to %s:%s timeout=%s",
+        smtp_server,
+        smtp_port,
+        smtp_timeout,
+    )
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, [to_email], msg.as_string())
+            logger.info("SMTP send success to=%s", to_email)
+    except Exception as exc:
+        logger.exception("SMTP send failed: %s", exc)
+        raise
 
 
 def _items_html(items):
