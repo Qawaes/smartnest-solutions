@@ -22,6 +22,7 @@ class Config:
     SMTP_EMAIL = os.getenv('SMTP_EMAIL')
     SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
     CONTACT_EMAIL = os.getenv('CONTACT_EMAIL')
+    SMTP_TIMEOUT_SECONDS = int(os.getenv('SMTP_TIMEOUT_SECONDS', 10))
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')

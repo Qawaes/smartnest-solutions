@@ -9,9 +9,14 @@ def send_email_smtp(to_email, subject, html_body, reply_to=None):
     smtp_port = current_app.config.get("SMTP_PORT")
     smtp_email = current_app.config.get("SMTP_EMAIL")
     smtp_password = current_app.config.get("SMTP_PASSWORD")
+    smtp_timeout = current_app.config.get("SMTP_TIMEOUT_SECONDS", 10)
 
+    if not smtp_server or not smtp_port:
+        raise RuntimeError("SMTP server not configured")
     if not smtp_email or not smtp_password:
         raise RuntimeError("SMTP credentials not configured")
+    if not to_email:
+        raise RuntimeError("Recipient email not provided")
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -21,7 +26,7 @@ def send_email_smtp(to_email, subject, html_body, reply_to=None):
         msg["Reply-To"] = reply_to
     msg.attach(MIMEText(html_body, "html"))
 
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
+    with smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout) as server:
         server.starttls()
         server.login(smtp_email, smtp_password)
         server.sendmail(smtp_email, [to_email], msg.as_string())

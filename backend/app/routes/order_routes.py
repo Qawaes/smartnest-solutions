@@ -145,8 +145,9 @@ def create_order():
 
         # Send order confirmation email (non-blocking)
         try:
-            email_body = build_order_confirmation_html(order)
-            send_order_email(order.email, "Your SmartNest Order Confirmation", email_body)
+            if order.email:
+                email_body = build_order_confirmation_html(order)
+                send_order_email(order.email, "Your SmartNest Order Confirmation", email_body)
         except Exception as e:
             print(f"Order email failed: {str(e)}")
 
