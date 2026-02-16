@@ -63,11 +63,11 @@ export default function Inventory() {
   };
 
   const getRemainingDuration = (product) => {
-    if (!product.flash_sale_end) return { value: "", unit: "hours" };
+    if (!product.flash_sale_end) return { value: 0, unit: "hours" };
     const now = new Date();
     const end = new Date(product.flash_sale_end);
     const diffMs = end.getTime() - now.getTime();
-    if (diffMs <= 0) return { value: "", unit: "hours" };
+    if (diffMs <= 0) return { value: 0, unit: "hours" };
     const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
     if (diffHours >= 24 * 30) {
       return { value: Math.ceil(diffHours / (24 * 30)), unit: "months" };
@@ -224,36 +224,54 @@ export default function Inventory() {
   const EditModal = ({ product }) => {
     if (!product) return null;
 
+    // Initialize edits for this product if not already done
+    useEffect(() => {
+      if (!edits[product.id]) {
+        const remaining = getRemainingDuration(product);
+        setEdits((prev) => ({
+          ...prev,
+          [product.id]: {
+            stock_quantity: product.stock_quantity ?? 0,
+            discount_percent: product.discount_percent ?? 0,
+            flash_sale_percent: product.flash_sale_percent ?? 0,
+            flash_duration_value: remaining.value,
+            flash_duration_unit: remaining.unit,
+          },
+        }));
+      }
+    }, [product.id]);
+
     const stockQty = getEditValue(
       product.id,
       "stock_quantity",
-      product.stock_quantity ?? ""
+      product.stock_quantity ?? 0
     );
     const discountPercent = getEditValue(
       product.id,
       "discount_percent",
-      product.discount_percent ?? ""
+      product.discount_percent ?? 0
     );
     const flashSalePercent = getEditValue(
       product.id,
       "flash_sale_percent",
-      product.flash_sale_percent ?? ""
+      product.flash_sale_percent ?? 0
     );
-    const stockQtyNumber = Number(stockQty || 0);
-    const discountPercentNumber = Number(discountPercent || 0);
-    const flashSalePercentNumber = Number(flashSalePercent || 0);
-    const remaining = getRemainingDuration(product);
     const flashDurationValue = getEditValue(
       product.id,
       "flash_duration_value",
-      remaining.value
+      0
     );
-    const flashDurationValueNumber = Number(flashDurationValue || 0);
     const flashDurationUnit = getEditValue(
       product.id,
       "flash_duration_unit",
-      remaining.unit
+      "hours"
     );
+
+    const stockQtyNumber = Number(stockQty || 0);
+    const discountPercentNumber = Number(discountPercent || 0);
+    const flashSalePercentNumber = Number(flashSalePercent || 0);
+    const flashDurationValueNumber = Number(flashDurationValue || 0);
+
     const discountedPrice =
       discountPercentNumber > 0
         ? Number(product.price) * (1 - discountPercentNumber / 100)
@@ -274,7 +292,15 @@ export default function Inventory() {
                 <p className="text-sm text-gray-500 mt-1">{product.name}</p>
               </div>
               <button
-                onClick={() => setEditingProduct(null)}
+                onClick={() => {
+                  setEditingProduct(null);
+                  // Clear edits when closing
+                  setEdits((prev) => {
+                    const copy = { ...prev };
+                    delete copy[product.id];
+                    return copy;
+                  });
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X size={24} className="text-gray-600" />
@@ -432,7 +458,15 @@ export default function Inventory() {
           <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl">
             <div className="flex gap-3">
               <button
-                onClick={() => setEditingProduct(null)}
+                onClick={() => {
+                  setEditingProduct(null);
+                  // Clear edits when canceling
+                  setEdits((prev) => {
+                    const copy = { ...prev };
+                    delete copy[product.id];
+                    return copy;
+                  });
+                }}
                 className="flex-1 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
               >
                 Cancel
