@@ -69,6 +69,9 @@ def create_app():
         "https://*.vercel.app",
         "http://localhost:5173",
         "http://localhost:3000",
+        "https://www.smartnestsolutionskenya.com",
+        "https://smartnestsolutionskenya.com",
+        "https://admin.smartnestsolutionskenya.com"
     ])
     
     allowed_origins = [o for o in allowed_origins if o]
