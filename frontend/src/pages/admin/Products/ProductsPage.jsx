@@ -12,6 +12,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -173,9 +174,10 @@ export default function ProductsPage() {
     }
     
     try {
-     const url = editingProduct
-     ? `${API_URL}/api/products/${editingProduct.id}` // ✅ CORRECT
-     : `${API_URL}/api/products`; // ✅ CORRECT
+      setIsSubmitting(true);
+      const url = editingProduct
+        ? `${API_URL}/api/products/${editingProduct.id}` // ✅ CORRECT
+        : `${API_URL}/api/products`; // ✅ CORRECT
       
       const method = editingProduct ? 'PUT' : 'POST';
 
@@ -222,6 +224,8 @@ export default function ProductsPage() {
     } catch (error) {
       console.error('Error saving product:', error);
       alert('Failed to save product');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -672,9 +676,12 @@ export default function ProductsPage() {
           </button>
           <button
             type="submit"
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+            disabled={isSubmitting}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {editingProduct ? 'Update Product' : 'Create Product'}
+            {isSubmitting
+              ? (editingProduct ? 'Updating Product...' : 'Creating Product...')
+              : (editingProduct ? 'Update Product' : 'Create Product')}
           </button>
         </div>
       </form>

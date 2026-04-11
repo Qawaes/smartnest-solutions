@@ -76,7 +76,7 @@ export default function Navbar() {
             </NavLink>
             
             <NavLink 
-              to="/category/home-essentials" 
+              to="/category/home-essential" 
               className={({ isActive }) => 
                 `px-4 py-2 rounded-xl font-medium transition-all ${
                   isActive 

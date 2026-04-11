@@ -62,7 +62,7 @@ export default function Category() {
 
   const titleMap = {
     gifts: "Gifts",
-    "home-essentials": "Home Essentials",
+    "home-essentialgit add .": "Home Essentials",
     "custom-branding": "Custom Branding",
   };
 
