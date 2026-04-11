@@ -59,6 +59,61 @@ export default function Product() {
   const ratingAvg = Number(product?.rating_avg ?? 0);
   const ratingCount = Number(product?.rating_count ?? 0);
 
+  const splitDescription = (text) => {
+    const normalized = String(text || "").trim();
+    if (!normalized) {
+      return { summary: "", extra: "", features: [] };
+    }
+
+    const lines = normalized
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    let inFeatures = false;
+    const featureLines = [];
+    const proseLines = [];
+
+    lines.forEach((line) => {
+      if (/^features?:/i.test(line)) {
+        inFeatures = true;
+        return;
+      }
+
+      const bulletMatch = line.match(/^(?:[-*]|\u2022|\u2013)\s+(.+)$/);
+      if (bulletMatch) {
+        featureLines.push(bulletMatch[1].trim());
+        inFeatures = true;
+        return;
+      }
+
+      if (inFeatures) {
+        featureLines.push(line);
+      } else {
+        proseLines.push(line);
+      }
+    });
+
+    const prose = proseLines.join(" ");
+    let summary = prose;
+    let extra = "";
+    if (prose) {
+      const sentenceMatch = prose.match(/^[^.!?]+[.!?]+/);
+      if (sentenceMatch) {
+        summary = sentenceMatch[0].trim();
+        extra = prose.slice(sentenceMatch[0].length).trim();
+      }
+    }
+
+    const features = featureLines
+      .map((item) => item.replace(/^(?:[-*]|\u2022|\u2013)\s+/, "").trim())
+      .filter(Boolean);
+
+    return { summary, extra, features };
+  };
+
+  const { summary, extra, features } = splitDescription(product?.description);
+
   useEffect(() => {
     if (!product?.flash_sale_start || !product?.flash_sale_end) {
       setFlashCountdown("");
@@ -548,9 +603,33 @@ export default function Product() {
             {/* Description */}
             <div className="max-w-4xl">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Product Description</h3>
-              <p className="text-gray-700 leading-relaxed text-lg">
-                {product.description}
-              </p>
+              {summary ? (
+                <>
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    {summary}
+                  </p>
+                  {extra && (
+                    <p className="text-gray-600 leading-relaxed mt-3">
+                      {extra}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-500">No description available.</p>
+              )}
+
+              {features.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Features</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                    {features.map((feature, idx) => (
+                      <li key={`feature-${product?.id || "item"}-${idx}`}>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Rating Section */}
