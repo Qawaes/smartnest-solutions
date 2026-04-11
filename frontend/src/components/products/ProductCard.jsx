@@ -8,6 +8,58 @@ export default function ProductCard({ product }) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  const splitDescription = (text) => {
+    const normalized = String(text || "").trim();
+    if (!normalized) return { summary: "", features: [] };
+
+    const lines = normalized
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    let inFeatures = false;
+    const featureLines = [];
+    const proseLines = [];
+
+    lines.forEach((line) => {
+      if (/^features?:/i.test(line)) {
+        inFeatures = true;
+        return;
+      }
+
+      const bulletMatch = line.match(/^(?:[-*]|\u2022|\u2013)\s+(.+)$/);
+      if (bulletMatch) {
+        featureLines.push(bulletMatch[1].trim());
+        inFeatures = true;
+        return;
+      }
+
+      if (inFeatures) {
+        featureLines.push(line);
+      } else {
+        proseLines.push(line);
+      }
+    });
+
+    const prose = proseLines.join(" ");
+    let summary = prose;
+    if (prose) {
+      const sentenceMatch = prose.match(/^[^.!?]+[.!?]+/);
+      if (sentenceMatch) {
+        summary = sentenceMatch[0].trim();
+      }
+    }
+
+    const features = featureLines
+      .map((item) => item.replace(/^(?:[-*]|\u2022|\u2013)\s+/, "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    return { summary, features };
+  };
+
+  const { summary, features } = splitDescription(product?.description);
+
   const inStock = product.in_stock !== false;
   const discountPercent = Number(product.discount_percent ?? 0);
   const flashSalePercent = Number(product.flash_sale_percent ?? 0);
@@ -198,8 +250,26 @@ export default function ProductCard({ product }) {
           <span>({ratingCount})</span>
         </div>
 
-        <div className="mb-3 text-sm text-gray-600">
-          {inStock ? "In stock" : "Out of stock"}
+        {summary && (
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 mb-3">
+            {summary}
+          </p>
+        )}
+
+        {features.length > 0 && (
+          <ul className="mb-3 text-xs text-gray-600 space-y-1">
+            {features.map((feature, idx) => (
+              <li key={`feature-${product?.id || "item"}-${idx}`} className="flex gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+                <span className="line-clamp-1">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mb-3 text-sm text-gray-600 flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${inStock ? "bg-green-500" : "bg-gray-400"}`} />
+          <span>{inStock ? "In stock" : "Out of stock"}</span>
         </div>
 
         {/* Add to Cart Button */}
