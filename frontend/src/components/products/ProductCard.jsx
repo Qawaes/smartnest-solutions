@@ -22,8 +22,18 @@ export default function ProductCard({ product }) {
     const proseLines = [];
 
     lines.forEach((line) => {
-      if (/^features?:/i.test(line)) {
+      const featuresHeaderMatch = line.match(/^(?:features?):\s*(.*)$/i);
+      if (featuresHeaderMatch) {
+        const inlineText = featuresHeaderMatch[1].trim();
         inFeatures = true;
+        if (inlineText) {
+          featureLines.push(
+            ...inlineText
+              .split(/[,;|]/)
+              .map((item) => item.trim())
+              .filter(Boolean)
+          );
+        }
         return;
       }
 
@@ -35,7 +45,12 @@ export default function ProductCard({ product }) {
       }
 
       if (inFeatures) {
-        featureLines.push(line);
+        featureLines.push(
+          ...line
+            .split(/[,;|]/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+        );
       } else {
         proseLines.push(line);
       }
