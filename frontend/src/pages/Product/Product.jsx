@@ -75,6 +75,7 @@ export default function Product() {
     const proseLines = [];
 
     lines.forEach((line) => {
+
       const featuresHeaderMatch = line.match(/^(?:features?):\s*(.*)$/i);
       if (featuresHeaderMatch) {
         const inlineText = featuresHeaderMatch[1].trim();

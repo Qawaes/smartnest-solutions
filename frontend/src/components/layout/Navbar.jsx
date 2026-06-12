@@ -22,7 +22,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-3 group">
             <div className="relative">
               <img
-                src="/smartnest-logo.jpg"
+                src="/smartnest-logo.png"
                 alt="SmartNest Logo"
                 className="h-10 w-10 rounded-xl object-cover ring-2 ring-purple-500/20 group-hover:ring-purple-500/40 transition-all"
               />

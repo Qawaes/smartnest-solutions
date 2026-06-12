@@ -26,14 +26,6 @@ export default function ProductCard({ product }) {
       if (featuresHeaderMatch) {
         const inlineText = featuresHeaderMatch[1].trim();
         inFeatures = true;
-        if (inlineText) {
-          featureLines.push(
-            ...inlineText
-              .split(/[,;|]/)
-              .map((item) => item.trim())
-              .filter(Boolean)
-          );
-        }
         return;
       }
 
@@ -64,7 +56,7 @@ export default function ProductCard({ product }) {
         summary = sentenceMatch[0].trim();
       }
     }
-
+    
     const features = featureLines
       .map((item) => item.replace(/^(?:[-*]|\u2022|\u2013)\s+/, "").trim())
       .filter(Boolean)
