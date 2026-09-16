@@ -1,0 +1,32 @@
+name: Update Sitemap
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch latest sitemap from Flask backend
+        run: |
+          curl -sf https://smartnest-backend-3vi6.onrender.com/sitemap.xml -o frontend/public/sitemap.xml
+
+      - name: Validate the fetched file looks like XML
+        run: |
+          if ! grep -q "<urlset" frontend/public/sitemap.xml; then
+            echo "Fetched file doesn't look like a valid sitemap. Aborting."
+            exit 1
+          fi
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add frontend/public/sitemap.xml
+          git diff --staged --quiet || git commit -m "Auto-update sitemap.xml"
+          git push
