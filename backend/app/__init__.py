@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from pathlib import Path
 from .extensions import db
-
+from app.routes.sitemap_routes import sitemap_bp
 
 # Always load backend/.env explicitly (works no matter where flask is run from)
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -150,6 +150,7 @@ def create_app():
     app.register_blueprint(admin_auth_bp, url_prefix="/api/admin/auth")
     app.register_blueprint(admin_payment_bp, url_prefix="/api/admin/payments")
     app.register_blueprint(contact_bp, url_prefix="/api/contact")
+    app.register_blueprint(sitemap_bp) 
 
     # Initialize cloudinary and other app-level helpers
     init_cloudinary(app)
